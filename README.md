@@ -16,10 +16,10 @@ What is Motocoin?
  Motocoin is the first Proof-of-Thought crypto-currency. It is similar to
 Proof-of-Work but instead of requiring to solve computationally expensive
 puzzles on computer it requires human to solve puzzles that are hard for
-computer. More specifically, people play 2D moto simulator game (similar to
-Elastomania) on pseudorandomly generated levels. Each time someone completes
-level faster then the target time, new block is generated and that player gets
-resward. As more people play and better they play the target becomes lower
+computer. More specifically, people play 2D moto-simulator game (similar to
+Elastomania) on pseudo-randomly generated levels. Each time someone completes
+level faster than the target time, new block is generated and that player gets
+reward. As more people play and better they play the target becomes lower
 and harder to reach.
 
 It has the following advantages:
@@ -27,7 +27,7 @@ It has the following advantages:
   and some skill at videogames.
 * No energy is wasted on useless computations.
 * Almost impossible to perform 51% attack. If you control enough hardware
-  you can perform 51% attack on a classic proof-of-work cryptocurrency,
+  you can perform 51% attack on a classic proof-of-work crypto-currency,
   machines wouldn't bore to fulfill your evil wishes. But people prefer to
   work for their profit and it would be too expensive to hire enough people,
   especially considering that most skilled players would rather mine Motocoin
@@ -35,7 +35,7 @@ It has the following advantages:
 
 Other information:
  - 5 minute block targets
- - subsidy halves in 200k blocks (~2 years) but will never be less then 2 coins per block.
+ - subsidy halves in 200k blocks (~2 years) but will never be less than 2 coins per block.
  - ≈40 mln coins in first 12 years, then 200 000 coins per year
  - 100 coins per block
  - 3.5 days (1008 blocks) to retarget difficulty
