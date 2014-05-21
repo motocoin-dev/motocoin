@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>GameHelpDialog</class>
+ <widget class="QDialog" name="GameHelpDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>666</width>
+    <height>486</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Mining help</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QLabel" name="label_2">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+       <horstretch>0</horstretch>
+       <verstretch>2</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="styleSheet">
+      <string notr="true"/>
+     </property>
+     <property name="text">
+      <string>&lt;html&gt;
+&lt;head&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;h1 align=&quot;center&quot;&gt;Mining&lt;/h1&gt;
+&lt;p&gt;To mine &lt;b&gt;motocoins&lt;/b&gt; you need to play the game. It is a 2D moto-simulator. You can control your bike using arrow keys and space. Your goal is to touch coin with wheel or head.&lt;/p&gt;
+&lt;p&gt;To get reward you must complete level in time less than current target time. Some levels are impossible to complete, so just keep pressing F6 until you find a level that can be completed.&lt;/p&gt;
+&lt;p&gt;When you will hit the coin you will get reward. There is some chance that you will not get any reward, this may happen if someone else will complete level in the same moment as you. While playing you may see sudden level changes, they happen when someone else successfully completes level. &lt;/p&gt;
+&lt;h2 align=&quot;center&quot;&gt;Game controls:&lt;/h2&gt;
+&lt;table&gt;
+    &lt;tr&gt;
+        &lt;td&gt;
+            &lt;b&gt;General:&lt;/b&gt;&lt;br/&gt;
+            F1 - show/hide help&lt;br/&gt;
+            F5 - restart current level&lt;br/&gt;
+            F6 - go to next level&lt;br/&gt;&lt;br/&gt;
+            &lt;b&gt;Gameplay:&lt;/b&gt;&lt;br/&gt;
+            ← - rotate counter-clockwise&lt;br/&gt;
+            → - rotate clockwise&lt;br/&gt;
+            ↑- accelerate&lt;br/&gt;
+            ↓ - brake&lt;br/&gt;
+            space - turnaround&lt;br/&gt;
+        &lt;/td&gt;
+         &lt;td&gt;
+            &lt;b&gt;Time:&lt;/b&gt;&lt;br/&gt;
+            Z  - decrease time speed&lt;br/&gt;
+            X  - increase time speed&lt;br/&gt;
+           R  - rewind&lt;br/&gt;&lt;br/&gt;
+            &lt;b&gt;View:&lt;/b&gt;&lt;br/&gt;
+            S - switch view&lt;br/&gt;
+            + - increase scale&lt;br/&gt;
+            - - decrease scale&lt;br/&gt;
+            M - show/hide map&lt;br/&gt;
+            * - magnify map&lt;br/&gt;
+            / - reduce map&lt;br/&gt;
+        &lt;/td&gt;
+    &lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>GameHelpDialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>248</x>
+     <y>254</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>157</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>GameHelpDialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>316</x>
+     <y>260</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>286</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>
