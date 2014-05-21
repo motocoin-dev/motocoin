@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 #include <exception>
+#include <sstream>
 using namespace std;
 using namespace chrono;
 
@@ -517,10 +518,19 @@ static void onKeyPress(GLFWwindow* pWindow, int Key, int Scancode, int Action, i
 	}
 }
 
+void showError(const string& Error)
+{
+	cout << Error << endl;
+#ifdef _WIN32
+	MessageBoxA(NULL, Error.c_str(), "Motogame Error", MB_ICONERROR);
+#endif
+}
 
 static void GLFW_ErrorCallback(int iError, const char* pString)
 {
-	fprintf(stderr, "GLFW Error #%i: %s\n", iError, pString);
+	stringstream Stream;
+	Stream << "GLFW Error #" << iError << ": " << pString;
+	showError(Stream.str());
 }
 
 int main(int argc, char** argv)
@@ -541,7 +551,7 @@ int main(int argc, char** argv)
 	g_pWindow = glfwCreateWindow(Width, Height, "The Game of Motocoin", NULL, NULL);
 	if (!g_pWindow)
 	{
-		cout << "Error: glfwCreateWindow failed" << endl;
+		showError ("glfwCreateWindow failed");
 		glfwTerminate();
 		return -1;
 	}

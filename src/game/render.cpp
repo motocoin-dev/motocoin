@@ -22,6 +22,8 @@ using namespace std;
 #include "graphics.hpp"
 #include "render.hpp"
 
+void showError(const string& Error);
+
 // Circumference of a unit circle.
 static const double Tau = 6.2831853071795864769;
 
@@ -115,7 +117,7 @@ static void initGLEW()
 	if (GLEW_OK != err)
 	{
 		// Problem: glewInit failed, something is seriously wrong.
-		cout << "GLEW Error: " << glewGetErrorString(err) << endl;
+		showError(string("GLEW Error: ") + (const char*)glewGetErrorString(err));
 		exit(-1);
 	}
 	cout << "GLEW version: " << glewGetString(GLEW_VERSION) << endl;
