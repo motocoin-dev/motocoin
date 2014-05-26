@@ -1096,21 +1096,17 @@ int64 static GetBlockValue(int nHeight, int64 nFees)
     if (nHeight == 0)
         return 3 * 150000 * COIN;
 
-    int64 nSubsidy = 100 * COIN;
+    int64 nSubsidy = ((nHeight > 10000)? 20 : 100) * COIN;
 
-    // Subsidy is cut in half every 200 000 blocks, which will occur approximately every 2 years
-    nSubsidy >>= (nHeight / 200000); // Motocoin: 200k blocks in ~2 years
+    // Subsidy is cut in half every 1000000 blocks, which will occur approximately every 2 years
+    nSubsidy >>= (nHeight / 1000000); // Motocoin: 1M blocks in ~2 years
 
     // There should always be some sense in playing motogame, so reward will never be zero.
-    if (nSubsidy < 2 * COIN)
-        nSubsidy = 2 * COIN;
+    if (nSubsidy < 2 * COIN/5)
+        nSubsidy = 2 * COIN/5;
 
     return nSubsidy + nFees;
 }
-
-static const int64 nTargetTimespan = 7 * 24 * 60 * 60 / 2; // Motocoin: 3.5 days
-static const int64 nTargetSpacing = 5 * 60; // Motocoin: 5 minutes
-static const int64 nInterval = nTargetTimespan / nTargetSpacing;
 
 //
 // minimum amount of work that could possibly be required nTime after
@@ -1140,8 +1136,30 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
     if (pindexLast == NULL)
         return nProofOfWorkLimit;
 
+    const int CurHeight = pindexLast->nHeight+1;
+
+    // restore target time at block 10000
+    if (CurHeight == 10000)
+        return nProofOfWorkLimit;
+
+    int64 nTargetSpacing;
+    int64 nInterval;
+
+    if (CurHeight < 10000)
+    {
+        nTargetSpacing = 5*60; // 5 minutes
+        nInterval = 1008;
+    }
+    else if (CurHeight > 10000) // Change parameters starting with 10000
+    {
+        nTargetSpacing = 1*60; // 1 minute
+        nInterval = 2000;
+    }
+
+    int64 nTargetTimespan = nInterval*nTargetSpacing;
+
     // Only change once per interval
-    if ((pindexLast->nHeight+1) % nInterval != 0)
+    if (CurHeight % nInterval != 0)
         return pindexLast->nBits;
 
     // Litecoin: This fixes an issue where a 51% attack can change difficulty at will.
@@ -1150,7 +1168,7 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
     if ((pindexLast->nHeight+1) != nInterval)
         blockstogoback = nInterval;
 
-    static uint16_t Times[nInterval];
+    static uint16_t Times[1010];
 
     // Go back by what we want to be 3.5 days worth of blocks
     const CBlockIndex* pindexFirst = pindexLast;
