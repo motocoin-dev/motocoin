@@ -27,7 +27,7 @@ class Motogame : public QObject
     void timerEvent(QTimerEvent *event);
 
 public:
-    explicit Motogame(CWallet* pWallet, QObject *parent = 0);
+    explicit Motogame(bool LowQ, bool OGL3, CWallet* pWallet, QObject *parent = 0);
     ~Motogame();
 
 signals:

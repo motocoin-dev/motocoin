@@ -1,15 +1,33 @@
 #include "moto-protocol.h"
 #include "motogame.h"
 #include "main.h"
+#ifdef _WIN32
+    #include <windows.h>
+#endif
 
 static std::unique_ptr<Motogame> g_pMotogame;
 
-static const char* g_pMotogameExecutablePath = "./motogame -nofun";
+static QString getMotogame(bool LowQ, bool OGL3)
+{
+    QString Prefix = "./";
+#ifdef _WIN32
+    if (!OGL3)
+    {
+        SYSTEM_INFO SysInfo;
+        GetNativeSystemInfo(&SysInfo);
+        if (SysInfo.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
+            Prefix = "./llvmpipe/64/";
+        else
+            Prefix = "./llvmpipe/32/";
+    }
+#endif
+    return Prefix + "motogame -nofun" + (LowQ? " -schematic" : "");
+}
 
-Motogame::Motogame(CWallet* pWallet, QObject *parent) :
+Motogame::Motogame(bool LowQ, bool OGL3, CWallet* pWallet, QObject *parent) :
     QObject(parent), m_Motogame(this), m_pWallet(pWallet), m_ReserveKey(pWallet), m_pPrevBest(nullptr)
 {
-    m_Motogame.start(g_pMotogameExecutablePath);
+    m_Motogame.start(getMotogame(LowQ, OGL3));
 
     connect(&m_Motogame, SIGNAL(readyReadStandardOutput()), this, SLOT(onReadAvailable()));
     connect(&m_Motogame, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(onGameFinished(int, QProcess::ExitStatus)));
@@ -124,13 +142,13 @@ void Motogame::updateBlock()
     m_Motogame.write(Msg.c_str());
 }
 
-void startMining(CWallet* pWallet)
+void startMining(bool LowQ, bool OGL3, CWallet* pWallet)
 {
     if (!g_pMotogame)
-        g_pMotogame.reset(new Motogame(pWallet));
+        g_pMotogame.reset(new Motogame(LowQ, OGL3, pWallet));
 }
 
-void watchReplay(int nHeight)
+void watchReplay(bool LowQ, bool OGL3, int nHeight)
 {
     if (nHeight <= 0 || nHeight > nBestHeight)
         return;
@@ -165,6 +183,6 @@ void watchReplay(int nHeight)
     std::string Msg = motoMessage(Work, pIndex->Nonce);
 
     SuicideProcess* pMotogameProcess = new SuicideProcess;
-    pMotogameProcess->start(g_pMotogameExecutablePath);
+    pMotogameProcess->start(getMotogame(LowQ, OGL3));
     pMotogameProcess->write(Msg.c_str());
 }

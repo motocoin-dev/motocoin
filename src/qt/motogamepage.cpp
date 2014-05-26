@@ -3,18 +3,29 @@
 #include "ui_motogamepage.h"
 #include "main.h"
 
-extern void startMining(CWallet* pWallet);
-extern void watchReplay(int nHeight);
+extern void startMining(bool LowQ, bool OGL3, CWallet* pWallet);
+extern void watchReplay(bool LowQ, bool OGL3, int nHeight);
 
 MotogamePage::MotogamePage(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::MotogamePage)
+    ui(new Ui::MotogamePage),
+    m_GroupQ(this),
+    m_GroupRender(this)
 {
     ui->setupUi(this);
     ui->BlockIndex->setMinimum(1);
 
     connect(ui->labelHelp, SIGNAL(linkActivated(const QString &)), this, SLOT(onLinkClicked(const QString &)));
 
+    m_GroupQ.addButton(ui->radioHighQ);
+    m_GroupQ.addButton(ui->radioLowQ);
+    m_GroupRender.addButton(ui->radioOGL3);
+    m_GroupRender.addButton(ui->radioSoft);
+    ui->radioHighQ->setChecked(true);
+    ui->radioOGL3->setChecked(true);
+#ifndef _WIN32
+    ui->radioSoft->setDisabled(true);
+#endif
     startTimer(1000);
 }
 
@@ -36,7 +47,7 @@ void MotogamePage::onLinkClicked(const QString & link)
 
 void MotogamePage::on_playButton_clicked()
 {
-    startMining(m_pWalletModel->wallet);
+    startMining(ui->radioLowQ->isChecked(), ui->radioOGL3->isChecked(), m_pWalletModel->wallet);
 }
 
 void MotogamePage::timerEvent(QTimerEvent *event)
@@ -57,5 +68,5 @@ void MotogamePage::on_watchButton_clicked()
 {
     int Value = ui->BlockIndex->value();
     if (0 < Value && Value <= nBestHeight)
-        watchReplay(Value);
+        watchReplay(ui->radioLowQ->isChecked(), ui->radioOGL3->isChecked(), Value);
 }

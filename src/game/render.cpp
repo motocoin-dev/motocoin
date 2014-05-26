@@ -197,15 +197,6 @@ void initRenderer()
 		 }\n\
 		";
 
-// Common part of Perlin and SimplePerlin fragment shaders.
-#define Fdxdy \
-	"vec3 fxy = texture(map, r).xyz;\n\
-	float P = fxy.z;\n\
-	vec2 graddir = normalize(fxy.xy);\n\
-	vec3 fxy2 = texture(map, r - graddir*" STRINGIFY(MOTO_WHEEL_R/(MOTO_SCALE*MOTO_MAP_SIZE)) ").xyz;\n\
-	float level = " STRINGIFY(MOTO_LEVEL/8192.0) ";\n\
-	float t = (level - fxy2.z)/(fxy2.x*graddir.x + fxy2.y*graddir.y);\n"
-
 	const char* pPerlinFragmentCode =
 		"#version 130\n\
 		 uniform sampler2D ground;\n\
@@ -218,13 +209,14 @@ void initRenderer()
 		 out vec4 FragColor;\n\
 		 void main()\n\
 		 {\n\
-		     " Fdxdy "\
-			 if (P > level)\n\
+		 	 vec4 fxyt = texture(map, r); \n\
+			 float level = " STRINGIFY(MOTO_LEVEL/8192.0) ";\n\
+			 if (fxyt.z > level)\n\
 			 {\n\
-			     vec3 n = vec3(fxy.xy/(P - level), -1.0);\n\
+			     vec3 n = vec3(fxyt.xy/(fxyt.z - level), -1.0);\n\
 				 vec4 C = texture(ground, r*16);\n\
 				 FragColor = vec4(C.rgb*(0.6 + 0.8*dot(normalize(n), normalize(vec3(1.0, -1.0, -1.0)))), C.a);\n\
-			 } else if (t > 0.4 || t < 0.0)\n\
+			 } else if (fxyt.w > 0.4 || fxyt.w < 0.0)\n\
 			     FragColor = texture(sky, 1.5*scale2*(r*16 + shift)); \n\
 			 else\n\
 			     FragColor = texture(grass, r*16);\n\
@@ -240,10 +232,11 @@ void initRenderer()
 		 out vec4 FragColor;\n\
 		 void main()\n\
 		 {\n\
-		 	 " Fdxdy "\
-			 if (P > level)\n\
+		 	 vec4 fxyt = texture(map, r); \n\
+			 float level = " STRINGIFY(MOTO_LEVEL/8192.0) ";\n\
+			 if (fxyt.z > level)\n\
 				 FragColor = ground;\n\
-			 else if (t > 0.4 || t < 0.0)\n\
+			 else if (fxyt.w > 0.4 || fxyt.w < 0.0)\n\
 			     FragColor = sky; \n\
 			 else\n\
 			     FragColor = ground;\n\
@@ -275,6 +268,22 @@ void initRenderer()
 	g_glTextColorUniform = glGetUniformLocation(g_glTextProgram, "color");
 }
 
+float interpLin(vec2 P, float Map[][4], int n, int N)
+{
+	int i = (int)floor(P.y) + N;
+	int j = (int)floor(P.x) + N;
+	float rx = P.x - floor(P.x);
+	float ry = P.y - floor(P.y);
+	float a00 = Map[i%N*N + j%N][n];
+	float a01 = Map[i%N*N + (j+1)%N][n];
+	float a11 = Map[(i+1)%N*N + (j+1)%N][n];
+	float a10 = Map[(i+1)%N*N + j%N][n];
+	float b0 = a00*(1-rx) + a01*rx;
+	float b1 = a10*(1-rx) + a11*rx;
+	float c = b0*(1-ry) + b1*ry;
+	return c;
+}
+
 // Load world map into texture.
 void prepareWorldRendering(const MotoWorld& World)
 {
@@ -298,7 +307,7 @@ void prepareWorldRendering(const MotoWorld& World)
 		cout << "Using " << N << 'x' << N << " texture for world map\n";
 	}
 
-	unique_ptr<float[][3]> Map(new float[N*N][3]);
+	unique_ptr<float[][4]> Map(new float[N*N][4]);
 
 	// This loop causes sensible delay when switching to new level.
 	// We try to parallelize it with OpenMP if possible.
@@ -323,7 +332,21 @@ void prepareWorldRendering(const MotoWorld& World)
 		for (int j = 0; j < N; j++)
 			Map[i*N + j][2] = 1.0f;
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, N, N, 0, GL_RGB, GL_FLOAT, Map.get());
+    #pragma omp parallel for
+	for (int i = 0; i < N; i++)
+		for (int j = 0; j < N; j++)
+		{
+			vec2 graddir(Map[i*N + j][0], Map[i*N + j][1]);
+			graddir = graddir/(graddir.length() + 0.00001);
+			vec2 P2 = vec2((float)j, (float)i) - graddir*float(N*MOTO_WHEEL_R/(MOTO_SCALE*MOTO_MAP_SIZE));
+			float f2 = interpLin(P2, Map.get(), 2, N);
+			float dx2 = interpLin(P2, Map.get(), 0, N);
+			float dy2 = interpLin(P2, Map.get(), 1, N);
+			float level = MOTO_LEVEL/8192.0;
+			Map[i*N + j][3] = (level - f2)/(dx2*graddir.x + dy2*graddir.y);
+		}
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, N, N, 0, GL_RGBA, GL_FLOAT, Map.get());
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

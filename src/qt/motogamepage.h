@@ -2,6 +2,7 @@
 #define MOTOGAMEPAGE_H
 
 #include <QWidget>
+#include <QButtonGroup>
 #include "walletmodel.h"
 
 namespace Ui {
@@ -28,6 +29,9 @@ private slots:
 private:
     Ui::MotogamePage *ui;
     WalletModel *m_pWalletModel;
+
+    QButtonGroup m_GroupQ;
+    QButtonGroup m_GroupRender;
 };
 
 #endif // MOTOGAMEPAGE_H
