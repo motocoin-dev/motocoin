@@ -47,7 +47,7 @@ void prepareWorldRendering(const MotoWorld& World);
 
 // Drawing functions.
 // Schematic means uniform color, i.e. no texture.
-void drawWorldAndCoin(const CView& View, const MotoState& Frame, bool Schematic, vec2 SkyShift = vec2());
+void drawWorldAndCoin(const CView& View, const MotoState& Frame, bool Schematic, bool IsMap, vec2 SkyShift = vec2());
 void drawMoto(const CView& View, const MotoState& Frame, bool MotoDir);
 void drawSchematicMoto(const CView& View, const MotoState& Frame);
 

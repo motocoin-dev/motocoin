@@ -63,6 +63,7 @@ static MotoPoW   g_PoW;
 
 static bool g_HasNextWork = false;
 static bool g_PlayingForFun = true;
+static bool g_SchematicMainView = false;
 
 static enum
 {
@@ -135,7 +136,7 @@ static void draw()
 	if (!g_OverallView)
 	{
 		CView View = getBigView();
-		drawWorldAndCoin(View, g_Frame, false, g_SkyShift);
+		drawWorldAndCoin(View, g_Frame, g_SchematicMainView, false, g_SkyShift);
 		drawMoto(View, g_Frame, g_MotoDir);
 	}
 
@@ -144,7 +145,7 @@ static void draw()
 	{
 		CView View = getMapView();
 		setScissor(View.m_ScreenPos);
-		drawWorldAndCoin(View, g_Frame, true);
+		drawWorldAndCoin(View, g_Frame, true, true);
 		renderCyclic(View, bind(drawSchematicMoto, placeholders::_1, g_Frame));
 		unsetScissor();
 	}
@@ -154,7 +155,7 @@ static void draw()
 	{
 		CView View = getOverallView();
 		setScissor(View.m_ScreenPos);
-		drawWorldAndCoin(View, g_Frame, false, g_SkyShift);
+		drawWorldAndCoin(View, g_Frame, g_SchematicMainView, false, g_SkyShift);
 		renderCyclic(View, bind(drawMoto, placeholders::_1, g_Frame, g_MotoDir));
 		unsetScissor();
 	}
@@ -521,8 +522,9 @@ static void onKeyPress(GLFWwindow* pWindow, int Key, int Scancode, int Action, i
 void showError(const string& Error)
 {
 	cout << Error << endl;
+	string Error2 = Error + "\nTry to use software rendering.";
 #ifdef _WIN32
-	MessageBoxA(NULL, Error.c_str(), "Motogame Error", MB_ICONERROR);
+	MessageBoxA(NULL, Error2.c_str(), "Motogame Error", MB_ICONERROR);
 #endif
 }
 
@@ -537,8 +539,12 @@ int main(int argc, char** argv)
 {
 	bool NoFun = false;
 	for (int i = 0; i < argc; i++)
+	{
 		if (strcmp(argv[i], "-nofun") == 0)
 			NoFun = true;
+		if (strcmp(argv[i], "-schematic") == 0)
+			g_SchematicMainView = true;
+	}
 
 	// Initialize GLFW library 
 	glfwSetErrorCallback(GLFW_ErrorCallback);

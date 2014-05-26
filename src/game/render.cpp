@@ -66,7 +66,8 @@ static GLuint g_glMapTexture; // World data for perlin noise.
 
 // Colors.
 static float g_SchematicGround[3] = { 0.314f, 0.209f, 0.104f };
-static float g_SchematicSky[3] = { 0.674f*0.6f, 0.782f*0.75f, 0.999f*0.75f };
+static float g_SchematicSky[3] = { 0.674f, 0.782f, 0.999f };
+static float g_SchematicMapSky[3] = { 0.674f*0.6f, 0.782f*0.75f, 0.999f*0.75f };
 static float g_SchematicCoin[3] = { 1.0f, 1.0f, 0.0f };
 static float g_SchematicMoto[3] = { 0.0f, 0.0f, 0.0f };
 static float g_TextColors[3][3] = { { 0.5f, 1.0f, 0.5f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } };
@@ -346,7 +347,7 @@ static void formRect(vec2 Rect[4], const vec2 OppositeVertices[2])
 	Rect[3] = vec2(OppositeVertices[1].x, OppositeVertices[0].y);
 }
 
-static void drawWorld(const CView& View, bool Schematic, vec2 SkyShift)
+static void drawWorld(const CView& View, bool Schematic, bool IsMap, vec2 SkyShift)
 {
 	vec2 ScreenRect[4];
 	vec2 WorldRect[4];
@@ -392,7 +393,7 @@ static void drawWorld(const CView& View, bool Schematic, vec2 SkyShift)
 		glUseProgram(g_glSimplePerlinProgram);
 
 		setUniformColor(g_glSimplePerlinGroundUniform, g_SchematicGround, 1.0f);
-		setUniformColor(g_glSimplePerlinSkyUniform, g_SchematicSky, 1.0f);
+		setUniformColor(g_glSimplePerlinSkyUniform, IsMap ? g_SchematicMapSky : g_SchematicSky, 1.0f);
 
 		glBindTexture(GL_TEXTURE_2D, g_glMapTexture);
 		glUniform1i(g_glSimplePerlinMapUniform, 0);
@@ -431,18 +432,18 @@ static void flushCoins()
 	drawArrays(GL_TRIANGLES, 2);
 }
 
-static void drawSchematicCoin(const CView& View, const vec2 Pos[2])
+static void drawSchematicCoin(const CView& View, const vec2 Pos[2], bool IsMap)
 {
 	glUseProgram(g_glSimpleProgram);
 	setUniformColor(g_glColorUniform, g_SchematicCoin, 1.0f);
 
 	vec2 C = 0.5f*(Pos[0] + Pos[1]);
-	drawCircle(View, C, 1.3f*0.5f*(Pos[1] - Pos[0]).x);
+	drawCircle(View, C, (IsMap? 1.3f : 1.0f)*0.5f*(Pos[1] - Pos[0]).x);
 }
 
-void drawWorldAndCoin(const CView& View, const MotoState& Frame, bool Schematic, vec2 SkyShift)
+void drawWorldAndCoin(const CView& View, const MotoState& Frame, bool Schematic, bool IsMap, vec2 SkyShift)
 {
-	drawWorld(View, Schematic, SkyShift);
+	drawWorld(View, Schematic, IsMap, SkyShift);
 
 	float k = sqrt((View.m_ScreenPos[1] - View.m_ScreenPos[0]).area()/(View.m_WorldPos[1] - View.m_WorldPos[0]).area());
 	float R = float(MOTO_WHEEL_R)*max(1.0f, 0.007f/k);
@@ -451,7 +452,7 @@ void drawWorldAndCoin(const CView& View, const MotoState& Frame, bool Schematic,
 	renderCyclic(View, [&](const CView& View)
 	{
 		if (Schematic)
-			drawSchematicCoin(View, Pos);
+			drawSchematicCoin(View, Pos, IsMap);
 		else
 			pushCoin(View, Pos, Frame.iFrame);
 	});
