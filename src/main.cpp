@@ -1096,7 +1096,7 @@ int64 static GetBlockValue(int nHeight, int64 nFees)
     if (nHeight == 0)
         return 3 * 150000 * COIN;
 
-    int64 nSubsidy = ((nHeight > 10000)? 20 : 100) * COIN;
+    int64 nSubsidy = ((nHeight > 8000)? 20 : 100) * COIN;
 
     // Subsidy is cut in half every 1000000 blocks, which will occur approximately every 2 years
     nSubsidy >>= (nHeight / 1000000); // Motocoin: 1M blocks in ~2 years
@@ -1138,19 +1138,19 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
 
     const int CurHeight = pindexLast->nHeight+1;
 
-    // restore target time at block 10000
-    if (CurHeight == 10000)
+    // restore target time at block 8000
+    if (CurHeight == 8000)
         return nProofOfWorkLimit;
 
     int64 nTargetSpacing;
     int64 nInterval;
 
-    if (CurHeight < 10000)
+    if (CurHeight < 8000)
     {
         nTargetSpacing = 5*60; // 5 minutes
         nInterval = 1008;
     }
-    else if (CurHeight > 10000) // Change parameters starting with 10000
+    else if (CurHeight > 8000) // Change parameters starting with 8000
     {
         nTargetSpacing = 1*60; // 1 minute
         nInterval = 2000;
@@ -1168,7 +1168,7 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
     if ((pindexLast->nHeight+1) != nInterval)
         blockstogoback = nInterval;
 
-    static uint16_t Times[1010];
+    static uint16_t Times[2048];
 
     // Go back by what we want to be 3.5 days worth of blocks
     const CBlockIndex* pindexFirst = pindexLast;
