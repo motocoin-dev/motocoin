@@ -13,7 +13,7 @@ Copyright (c) 2014-2014 Motocoin Developers
 
 What is Motocoin?
 ----------------
- Motocoin is the first Proof-of-Thought crypto-currency. It is similar to
+ Motocoin is the first Proof-of-Play crypto-currency. It is similar to
 Proof-of-Work but instead of requiring to solve computationally expensive
 puzzles on computer it requires human to solve puzzles that are hard for
 computer. More specifically, people play 2D moto-simulator game (similar to
