@@ -337,7 +337,7 @@ void prepareWorldRendering(const MotoWorld& World)
 		for (int j = 0; j < N; j++)
 		{
 			vec2 graddir(Map[i*N + j][0], Map[i*N + j][1]);
-			graddir = graddir/(graddir.length() + 0.00001);
+			graddir = graddir/(graddir.length() + 0.00001f);
 			vec2 P2 = vec2((float)j, (float)i) - graddir*float(N*MOTO_WHEEL_R/(MOTO_SCALE*MOTO_MAP_SIZE));
 			float f2 = interpLin(P2, Map.get(), 2, N);
 			float dx2 = interpLin(P2, Map.get(), 0, N);
