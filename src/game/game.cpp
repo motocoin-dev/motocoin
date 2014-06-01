@@ -48,7 +48,9 @@ static bool g_ShowTimer = true;
 static bool g_ShowHelp = false;
 static bool g_ShowMap = true;
 static bool g_OverallView = false;
+static int g_WaitControl = -1;
 static double g_Speed = 1.0;
+static const float g_ControlsLetterSize = 0.018f;
 
 // Sky shift.
 static int32_t g_PrevIntPosition[2]; // used in sky shifting calculation
@@ -80,6 +82,201 @@ static double g_PlayTime;
 static double g_ProgramStartTime;
 
 static GLFWwindow* g_pWindow;
+
+enum EAction
+{
+	ACTION_SHOW_CONTROLS,
+	ACTION_RESTART_EVEL,
+	ACTION_NEXT_LEVEL,
+	ACTION_ROTATE_CCW,
+	ACTION_ROTATE_CW,
+	ACTION_GAS,
+	ACTION_BRAKE,
+	ACTION_TURNAROUND,
+	ACTION_INC_TIME_SPEED,
+	ACTION_DEC_TIME_SPEED,
+	ACTION_REWIND,
+	ACTION_SWITCH_VIEW,
+	ACTION_INC_SCALE,
+	ACTION_DEC_SCALE,
+	ACTION_MAP,
+	ACTION_INC_MAP,
+	ACTION_DEC_MAP,
+
+	ACTION_COUNT
+};
+
+string getKeyName(int Key)
+{
+	if (Key >= 33 && Key <= 96)
+	{
+		char Str[2] = { (char)Key, 0};
+		return Str;
+	}
+	if (Key >= 290 && Key <= 298)
+	{
+		char Str[3] = { 'F', char('0' + Key - 289), 0 };
+		return Str;
+	}
+	if (Key >= 299 && Key <= 314)
+	{
+		char Str[4] = { 'F', char('0' + (Key - 299) / 10), char('0' + char(Key - 299) % 10), 0 };
+		return Str;
+	}
+	if (Key >= 320 && Key <= 329)
+	{
+		char Str[2] = { char('0' + Key - 320), 0 };
+		return string("Keypad ") + Str;
+	}
+	if (Key < -10)
+		return  "Press new key...";
+
+	/* Printable keys */
+	switch (Key)
+	{
+	case GLFW_KEY_SPACE: return "Space";
+	case GLFW_KEY_WORLD_1: return "World 1"; /* non-US #1 */
+	case GLFW_KEY_WORLD_2: return "World 2"; /* non-US #2 */
+
+	/* Function keys */
+	case GLFW_KEY_ESCAPE: return "Escape";
+	case GLFW_KEY_ENTER: return "Enter";
+	case GLFW_KEY_TAB: return "Tab";
+	case GLFW_KEY_BACKSPACE: return "Backspace";
+	case GLFW_KEY_INSERT: return "Insert";
+	case GLFW_KEY_DELETE: return "Delete";
+	case GLFW_KEY_RIGHT: return "\x3";
+	case GLFW_KEY_LEFT: return "\x1";
+	case GLFW_KEY_DOWN: return "\x4";
+	case GLFW_KEY_UP: return "\x2";
+	case GLFW_KEY_PAGE_UP: return "Page Up";
+	case GLFW_KEY_PAGE_DOWN: return "Page Down";
+	case GLFW_KEY_HOME: return "Home";
+	case GLFW_KEY_END: return "End";
+	case GLFW_KEY_CAPS_LOCK: return "Caps Lock";
+	case GLFW_KEY_SCROLL_LOCK: return "Scroll Lock";
+	case GLFW_KEY_NUM_LOCK: return "Num Lock";
+	case GLFW_KEY_PRINT_SCREEN: return "Print Screen";
+	case GLFW_KEY_PAUSE: return "Pause";
+	case GLFW_KEY_KP_DECIMAL: return "Keypad .";
+	case GLFW_KEY_KP_DIVIDE: return "Keypad /";
+	case GLFW_KEY_KP_MULTIPLY: return "Keypad *";
+	case GLFW_KEY_KP_SUBTRACT: return "Keypad -";
+	case GLFW_KEY_KP_ADD: return "Keypad +";
+	case GLFW_KEY_KP_ENTER: return "Keypad Enter";
+	case GLFW_KEY_KP_EQUAL: return "Keypad =";
+	case GLFW_KEY_LEFT_SHIFT: return "Left Shift";
+	case GLFW_KEY_LEFT_CONTROL: return "Left Control";
+	case GLFW_KEY_LEFT_ALT: return "Left Alt";
+	case GLFW_KEY_LEFT_SUPER: return "Left Super";
+	case GLFW_KEY_RIGHT_SHIFT: return "Right Shift";
+	case GLFW_KEY_RIGHT_CONTROL: return "Right Control";
+	case GLFW_KEY_RIGHT_ALT: return "Right Alt";
+	case GLFW_KEY_RIGHT_SUPER: return "Right Super";
+	case GLFW_KEY_MENU: return "Menu";
+	}
+
+	return "Unknown";
+}
+
+struct Control
+{
+	const char* pName;
+	int Key;
+
+	string toString()
+	{
+		return string(pName) + " - " + getKeyName(Key);
+	}
+};
+
+static Control g_Controls[ACTION_COUNT] =
+{
+	{ "Show/Hide controls", GLFW_KEY_F1 },
+	{ "Restart current level", GLFW_KEY_F5 },
+	{ "Go to next level", GLFW_KEY_F6 },
+
+	{ "Rotate counter-clockwise", GLFW_KEY_LEFT },
+	{ "Rotate clockwise", GLFW_KEY_RIGHT },
+	{ "Accelerate", GLFW_KEY_UP },
+	{ "Brake", GLFW_KEY_DOWN },
+	{ "Turnaround", GLFW_KEY_SPACE },
+
+	{ "Decrease time speed", GLFW_KEY_Z },
+	{ "Increase time speed", GLFW_KEY_X },
+	{ "Rewind", GLFW_KEY_R },
+
+	{ "Switch view", GLFW_KEY_S },
+	{ "Increase scale", GLFW_KEY_KP_ADD },
+	{ "Decrease scale", GLFW_KEY_KP_SUBTRACT },
+	{ "Show/Hide map", GLFW_KEY_M },
+	{ "Magnify map", GLFW_KEY_KP_MULTIPLY },
+	{ "Reduce map", GLFW_KEY_KP_DIVIDE }
+};
+
+static string printControls(int iLine, bool Exclude)
+{
+	ostringstream Controls;
+	auto print = [&](int i)
+	{
+		if ((i == iLine) ^ Exclude)
+		    Controls << "    " << g_Controls[i].toString();
+		Controls << '\n';
+	};
+	if (Exclude)
+		Controls << "General:\n";
+	else
+		Controls << "\n";
+	for (int i = 0; i < 3; i++)
+		print(i);
+	if (Exclude)
+		Controls << "\nGameplay:\n";
+	else
+		Controls << "\n\n";
+	for (int i = 3; i < 8; i++)
+		print(i);
+	if (Exclude)
+		Controls << "\nTime:\n";
+	else
+		Controls << "\n\n";
+	for (int i = 8; i < 11; i++)
+		print(i);
+	if (Exclude)
+		Controls << "\nView:\n";
+	else
+		Controls << "\n\n";
+	for (int i = 11; i < 17; i++)
+		print(i);
+	return Controls.str();
+}
+
+static int getHoveredControl()
+{
+	double MouseX, MouseY;
+	glfwGetCursorPos(g_pWindow, &MouseX, &MouseY);
+	if (MouseX/g_ViewportSize.x > 0.5)
+		return -1;
+	int iHoverLine = MouseY/(g_ViewportSize.x*g_ControlsLetterSize);
+	switch (iHoverLine)
+	{
+	case 0:
+	case 4:
+	case 5:
+	case 11:
+	case 12:
+	case 16:
+	case 17:
+		iHoverLine = -1;
+	}
+	iHoverLine -= 1;
+	if (iHoverLine > 3)
+		iHoverLine -= 2;
+	if (iHoverLine > 8)
+		iHoverLine -= 2;
+	if (iHoverLine > 11)
+		iHoverLine -= 2;
+	return iHoverLine;
+}
 
 static CView getBigView()
 {
@@ -176,36 +373,15 @@ static void draw()
 	float LetterSize = 0.02f;
 	if (g_ShowHelp)
 	{
-		const char* pHelp =
-			"General:\n"
-			"    F1 - show/hide this help\n"
-			"    F5 - restart current level\n"
-			"    F6 - go to next level\n"
-			"\n"
-			"Gameplay:\n"
-			"    \x1 - rotate counter-clockwise\n" 
-			"    \x3 - rotate clockwise\n" 
-			"    \x2 - accelerate\n" 
-			"    \x4 - brake\n" 
-			"    space - turnaround\n"
-			"\n"
-			"Time:\n"
-			"    Z  - decrease time speed\n"
-			"    X  - increase time speed\n"
-			"    R  - rewind\n"
-			"\n"
-			"View:\n"
-			"    S - switch view\n"
-			"    + - increase scale\n"
-			"    - - decrease scale\n"
-			"    M - show/hide map\n"
-			"    * - magnify map\n"
-			"    / - reduce map\n"
-			;
-		drawText(pHelp, 1, 1, LetterSize);
+		float LetterSize = g_ControlsLetterSize;
+		int iHoverLine = (g_WaitControl == -1) ? getHoveredControl() : g_WaitControl;
+		string Str = printControls(iHoverLine, true);
+		drawText(Str.c_str(), 1, 1, LetterSize, 0);
+		Str = printControls(iHoverLine, false);
+		drawText(Str.c_str(), 1, 1, LetterSize, 3);
 	}
 	else
-		drawText("Press F1 for help", 1, 1, LetterSize, 0, 1.0f - pow(float(glfwGetTime() - g_ProgramStartTime), 3.0f)*0.005f);
+		drawText("Press F1 to show/change controls", 1, 1, LetterSize, 0, 1.0f - pow(float(glfwGetTime() - g_ProgramStartTime), 3.0f)*0.005f);
 
 	if (g_Frame.Dead)
 	{
@@ -335,27 +511,33 @@ static bool processSolution()
 	return true;
 }
 
+static bool isPressed(EAction Action)
+{
+	int Key = g_Controls[Action].Key;
+	return Key > 0 && glfwGetKey(g_pWindow, g_Controls[Action].Key) == GLFW_PRESS;
+}
+
 static void playWithInput(int NextFrame)
 {
 	NextFrame = min((int)g_Work.TimeTarget, NextFrame);
 
 	// Get user input.
 	static bool TurnWasAroundPressed = false;
-	bool TurnAroundPressed = glfwGetKey(g_pWindow, GLFW_KEY_SPACE) == GLFW_PRESS;
+	bool TurnAroundPressed = isPressed(ACTION_TURNAROUND) == GLFW_PRESS;
 	if (TurnAroundPressed && !TurnWasAroundPressed)
 		g_MotoDir = !g_MotoDir;
 	TurnWasAroundPressed = TurnAroundPressed;
 
 	EMotoAccel Accel = MOTO_IDLE;
-	if (glfwGetKey(g_pWindow, GLFW_KEY_DOWN) == GLFW_PRESS)
+	if (isPressed(ACTION_BRAKE) == GLFW_PRESS)
 		Accel = MOTO_BRAKE;
-	else if (glfwGetKey(g_pWindow, GLFW_KEY_UP) == GLFW_PRESS)
+	else if (isPressed(ACTION_GAS) == GLFW_PRESS)
 		Accel = g_MotoDir ? MOTO_GAS_LEFT : MOTO_GAS_RIGHT;
 
 	EMotoRot Rotation = MOTO_NO_ROTATION;
-	if (glfwGetKey(g_pWindow, GLFW_KEY_RIGHT) == GLFW_PRESS)
+	if (isPressed(ACTION_ROTATE_CW) == GLFW_PRESS)
 		Rotation = MOTO_ROTATE_CW;
-	if (glfwGetKey(g_pWindow, GLFW_KEY_LEFT) == GLFW_PRESS)
+	if (isPressed(ACTION_ROTATE_CCW) == GLFW_PRESS)
 		Rotation = MOTO_ROTATE_CCW;
 
 	switch (motoAdvance(&g_Frame, &g_PoW, &g_World, Accel, Rotation, NextFrame - g_Frame.iFrame))
@@ -395,7 +577,7 @@ static void play()
 	
 	double TimeDelta = Time - g_PrevTime;
 	g_PrevTime = Time;
-	if (glfwGetKey(g_pWindow, GLFW_KEY_R) == GLFW_PRESS)
+	if (isPressed(ACTION_REWIND) == GLFW_PRESS)
 		TimeDelta = -TimeDelta;
 	if ((g_Frame.Dead && TimeDelta > 0) || g_State == STATE_SUCCESS)
 		TimeDelta = 0.0;
@@ -464,58 +646,121 @@ static void changeScale(float K)
 	g_RenderScale *= K;
 }
 
+// We can't save anything to file from this app. That's because of encoding hell it
+// would be hard to do it reliable on all platforms. So we will let qt app to do it.
+static void loadConfig(const char* pConfig)
+{
+	istringstream Str(pConfig);
+	for (int i = 0; i < ACTION_COUNT; i++)
+	{
+		Str >> g_Controls[i].Key;
+		char c;
+		Str >> c;
+	}
+}
+
+static void printConfig()
+{
+	cout << "***Config:*";
+	for (int i = 0; i < ACTION_COUNT; i++)
+		cout << g_Controls[i].Key << '-';
+	cout << '\n';
+}
+
 static void onKeyPress(GLFWwindow* pWindow, int Key, int Scancode, int Action, int Mods)
 {
 	if (Action != GLFW_PRESS)
 		return;
 
-	switch (Key)
+	if (Key == GLFW_KEY_ESCAPE && !g_ShowHelp)
 	{
-	case GLFW_KEY_F1:
+		glfwSetWindowShouldClose(g_pWindow, 1);
+		return;
+	}
+	if (Key == GLFW_KEY_ESCAPE)
+		Key = GLFW_KEY_F1;
+
+	if (g_WaitControl != -1)
+	{
+		if (Key == GLFW_KEY_F1)
+		{
+			g_Controls[g_WaitControl].Key = -g_Controls[g_WaitControl].Key;
+			g_WaitControl = -1;
+			return;
+		}
+		g_Controls[g_WaitControl].Key = Key;
+		g_WaitControl = -1;
+		printConfig();
+		return;
+	}
+
+	EAction Act = ACTION_COUNT;
+	for (int i = 0; i < ACTION_COUNT; i++)
+		if (g_Controls[i].Key == Key)
+		{
+			Act = (EAction)i;
+			break;
+		}
+	if (Act == ACTION_COUNT)
+		return;
+
+	switch (Act)
+	{
+	case ACTION_SHOW_CONTROLS:
 		g_ShowHelp = !g_ShowHelp;
 		break;
 
-	case GLFW_KEY_F5:
+	case ACTION_RESTART_EVEL:
 		restart();
 		break;
 
-	case GLFW_KEY_F6:
+	case ACTION_NEXT_LEVEL:
 		goToNextWorld();
 		break;
 
-	case GLFW_KEY_S:
+	case ACTION_SWITCH_VIEW:
 		g_OverallView = !g_OverallView;
 		break;
 
-	case GLFW_KEY_M:
+	case ACTION_MAP:
 		g_ShowMap = !g_ShowMap;
 		break;
 
-	case GLFW_KEY_KP_ADD:
-	case GLFW_KEY_EQUAL:
+	case ACTION_INC_SCALE:
 		changeScale(1.1f);
 		break;
 
-	case GLFW_KEY_KP_SUBTRACT:
-	case GLFW_KEY_MINUS:
+	case ACTION_DEC_SCALE:
 		changeScale(1/1.1f);
 		break;
 
-	case GLFW_KEY_KP_MULTIPLY:
+	case ACTION_INC_MAP:
 		g_MapSize *= 1.1f;
 		break;
 
-	case GLFW_KEY_KP_DIVIDE:
+	case ACTION_DEC_MAP:
 		g_MapSize /= 1.1f;
 		break;
 
-	case GLFW_KEY_Z:
+	case ACTION_INC_TIME_SPEED:
 		g_Speed = max(g_Speed/1.1, 0.3);
 		break;
 
-	case GLFW_KEY_X:
+	case ACTION_DEC_TIME_SPEED:
 		g_Speed = min(g_Speed*1.1, 3.0);
 		break;
+	}
+}
+
+static void onMouseButtonPress(GLFWwindow *pWindow, int Button, int Action, int Mods)
+{
+	if (Button == GLFW_MOUSE_BUTTON_LEFT && Action == GLFW_PRESS && g_ShowHelp)
+	{
+		int iControl = getHoveredControl();
+		if (iControl < 0 || iControl == ACTION_SHOW_CONTROLS)
+			return;
+		g_Controls[iControl].Key = -g_Controls[iControl].Key;
+		g_WaitControl = iControl;
 	}
 }
 
@@ -538,23 +783,40 @@ static void GLFW_ErrorCallback(int iError, const char* pString)
 int main(int argc, char** argv)
 {
 	bool NoFun = false;
+	bool Fullscreen = false;
 	for (int i = 0; i < argc; i++)
 	{
 		if (strcmp(argv[i], "-nofun") == 0)
 			NoFun = true;
 		if (strcmp(argv[i], "-schematic") == 0)
 			g_SchematicMainView = true;
+		if (strcmp(argv[i], "-fullscreen") == 0)
+			Fullscreen = true;
+		if (strcmp(argv[i], "-config") == 0 && i + 1 < argc)
+		{
+			i++;
+			loadConfig(argv[i]);
+		}
 	}
-
+	
 	// Initialize GLFW library 
 	glfwSetErrorCallback(GLFW_ErrorCallback);
 	if (!glfwInit())
 		return -1;
 
 	// Create a OpenGL window
-	const int Width = 800;
-	const int Height = 600;
-	g_pWindow = glfwCreateWindow(Width, Height, "The Game of Motocoin", NULL, NULL);
+	int Width = 800;
+	int Height = 600;
+	if (Fullscreen)
+	{
+		GLFWmonitor* pMonitor = glfwGetPrimaryMonitor();
+		const GLFWvidmode* pMode = glfwGetVideoMode(pMonitor);
+		Width = pMode->width;
+		Height = pMode->height;
+		g_pWindow = glfwCreateWindow(Width, Height, "The Game of Motocoin", pMonitor, NULL);
+	}
+	else
+		g_pWindow = glfwCreateWindow(Width, Height, "The Game of Motocoin", NULL, NULL);
 	if (!g_pWindow)
 	{
 		showError ("glfwCreateWindow failed");
@@ -567,6 +829,7 @@ int main(int argc, char** argv)
 
 	// Set window callbacks
 	glfwSetKeyCallback(g_pWindow, onKeyPress);
+	glfwSetMouseButtonCallback(g_pWindow, onMouseButtonPress);
 	glfwSetWindowSizeCallback(g_pWindow, onWindowResize);
 
 	// GLFW doesn't call window resize callback when window is created so we call it.
@@ -633,6 +896,8 @@ int main(int argc, char** argv)
 	}
 
 	glfwTerminate();
+
+	printConfig();
 
 	// g_InputThread is still running and there is no way to terminate it.
 #ifdef _WIN32

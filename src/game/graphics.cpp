@@ -29,7 +29,7 @@ static GLuint g_glBuffer;
 
 // This is hard-coded limit on buffer size.
 // We do just very simple drawings and therefore can compute its size in advance.
-static const int g_BufferSize = 10240;
+static const int g_BufferSize = 12000;
 
 // Attributes that aren't yet coppied to GPU memory are stored temporarily in this buffer.
 static int g_NumAttributes = 0;

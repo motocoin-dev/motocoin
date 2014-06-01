@@ -70,7 +70,7 @@ static float g_SchematicSky[3] = { 0.674f, 0.782f, 0.999f };
 static float g_SchematicMapSky[3] = { 0.674f*0.6f, 0.782f*0.75f, 0.999f*0.75f };
 static float g_SchematicCoin[3] = { 1.0f, 1.0f, 0.0f };
 static float g_SchematicMoto[3] = { 0.0f, 0.0f, 0.0f };
-static float g_TextColors[3][3] = { { 0.5f, 1.0f, 0.5f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } };
+static float g_TextColors[4][3] = { { 0.5f, 1.0f, 0.5f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.9f, 1.0f, 0.9f } };
 
 // Description of sub-texture stored in motocycle.bmp.
 struct CImage

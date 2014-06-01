@@ -1,36 +1,46 @@
+#include <QSettings>
+
 #include "motogamepage.h"
 #include "gamehelpdialog.h"
 #include "ui_motogamepage.h"
 #include "main.h"
 
-extern void startMining(bool LowQ, bool OGL3, CWallet* pWallet);
-extern void watchReplay(bool LowQ, bool OGL3, int nHeight);
+extern void startMining(bool LowQ, bool OGL3, bool Fullscreen, CWallet* pWallet);
+extern void watchReplay(bool LowQ, bool OGL3, bool Fullscreen, int nHeight);
 
 MotogamePage::MotogamePage(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::MotogamePage),
-    m_GroupQ(this),
-    m_GroupRender(this)
+    ui(new Ui::MotogamePage)
 {
     ui->setupUi(this);
     ui->BlockIndex->setMinimum(1);
 
     connect(ui->labelHelp, SIGNAL(linkActivated(const QString &)), this, SLOT(onLinkClicked(const QString &)));
 
-    m_GroupQ.addButton(ui->radioHighQ);
-    m_GroupQ.addButton(ui->radioLowQ);
-    m_GroupRender.addButton(ui->radioOGL3);
-    m_GroupRender.addButton(ui->radioSoft);
-    ui->radioHighQ->setChecked(true);
+    QSettings settings;
+    ui->checkHighQ->setChecked(settings.value("GameHighQ", true).toBool());
+    ui->checkFullscreen->setChecked(settings.value("GameFullsceen", false).toBool());
+
+#ifdef _WIN32
+    if(settings.value("GameOGL3", true).toBool())
+        ui->radioOGL3->setChecked(true);
+    else
+        ui->radioSoft->setChecked(true);
+#else
     ui->radioOGL3->setChecked(true);
-#ifndef _WIN32
     ui->radioSoft->setDisabled(true);
 #endif
+
     startTimer(1000);
 }
 
 MotogamePage::~MotogamePage()
 {
+    QSettings settings;
+    settings.setValue("GameHighQ", ui->checkHighQ->isChecked());
+    settings.setValue("GameFullsceen", ui->checkFullscreen->isChecked());
+    settings.setValue("GameOGL3", ui->radioOGL3->isChecked());
+
     delete ui;
 }
 
@@ -47,7 +57,7 @@ void MotogamePage::onLinkClicked(const QString & link)
 
 void MotogamePage::on_playButton_clicked()
 {
-    startMining(ui->radioLowQ->isChecked(), ui->radioOGL3->isChecked(), m_pWalletModel->wallet);
+    startMining(!ui->checkHighQ->isChecked(), ui->radioOGL3->isChecked(), ui->checkFullscreen->isChecked(), m_pWalletModel->wallet);
 }
 
 void MotogamePage::timerEvent(QTimerEvent *event)
@@ -68,5 +78,5 @@ void MotogamePage::on_watchButton_clicked()
 {
     int Value = ui->BlockIndex->value();
     if (0 < Value && Value <= nBestHeight)
-        watchReplay(ui->radioLowQ->isChecked(), ui->radioOGL3->isChecked(), Value);
+        watchReplay(!ui->checkHighQ->isChecked(), ui->radioOGL3->isChecked(), ui->checkFullscreen->isChecked(), Value);
 }

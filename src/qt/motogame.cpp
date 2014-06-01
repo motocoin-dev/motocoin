@@ -1,3 +1,5 @@
+#include <QSettings>
+
 #include "moto-protocol.h"
 #include "motogame.h"
 #include "main.h"
@@ -7,7 +9,7 @@
 
 static std::unique_ptr<Motogame> g_pMotogame;
 
-static QString getMotogame(bool LowQ, bool OGL3)
+static QString getMotogame(bool LowQ, bool OGL3, bool Fullscreen)
 {
     QString Prefix = "./";
 #ifdef _WIN32
@@ -21,13 +23,16 @@ static QString getMotogame(bool LowQ, bool OGL3)
             Prefix = "./llvmpipe/32/";
     }
 #endif
-    return Prefix + "motogame -nofun" + (LowQ? " -schematic" : "");
+    QSettings settings;
+    QString Controls = settings.value("GameControls", "").toString();
+
+    return Prefix + "motogame -nofun" + (LowQ? " -schematic" : "") + " " + (Fullscreen? " -fullscreen" : "") + " " + (Controls.isEmpty()? "" : "-config " + Controls);
 }
 
-Motogame::Motogame(bool LowQ, bool OGL3, CWallet* pWallet, QObject *parent) :
+Motogame::Motogame(bool LowQ, bool OGL3, bool Fullscreen, CWallet* pWallet, QObject *parent) :
     QObject(parent), m_Motogame(this), m_pWallet(pWallet), m_ReserveKey(pWallet), m_pPrevBest(nullptr)
 {
-    m_Motogame.start(getMotogame(LowQ, OGL3));
+    m_Motogame.start(getMotogame(LowQ, OGL3, Fullscreen));
 
     connect(&m_Motogame, SIGNAL(readyReadStandardOutput()), this, SLOT(onReadAvailable()));
     connect(&m_Motogame, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(onGameFinished(int, QProcess::ExitStatus)));
@@ -95,6 +100,13 @@ void Motogame::onReadAvailable()
             }
             updateBlock();
         }
+        else if (strncmp(Msg.data(), "***Config:*", 11) == 0)
+        {
+            QString Controls(Msg.data() + 11);
+            Controls.remove("\n");
+            QSettings settings;
+            settings.setValue("GameControls", Controls);
+        }
     }
 }
 
@@ -142,13 +154,13 @@ void Motogame::updateBlock()
     m_Motogame.write(Msg.c_str());
 }
 
-void startMining(bool LowQ, bool OGL3, CWallet* pWallet)
+void startMining(bool LowQ, bool OGL3, bool Fullscreen, CWallet* pWallet)
 {
     if (!g_pMotogame)
-        g_pMotogame.reset(new Motogame(LowQ, OGL3, pWallet));
+        g_pMotogame.reset(new Motogame(LowQ, OGL3, Fullscreen, pWallet));
 }
 
-void watchReplay(bool LowQ, bool OGL3, int nHeight)
+void watchReplay(bool LowQ, bool OGL3, bool Fullscreen, int nHeight)
 {
     if (nHeight <= 0 || nHeight > nBestHeight)
         return;
@@ -183,6 +195,6 @@ void watchReplay(bool LowQ, bool OGL3, int nHeight)
     std::string Msg = motoMessage(Work, pIndex->Nonce);
 
     SuicideProcess* pMotogameProcess = new SuicideProcess;
-    pMotogameProcess->start(getMotogame(LowQ, OGL3));
+    pMotogameProcess->start(getMotogame(LowQ, OGL3, Fullscreen));
     pMotogameProcess->write(Msg.c_str());
 }
