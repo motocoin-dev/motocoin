@@ -1,4 +1,5 @@
 #include <QSettings>
+#include <QCoreApplication>
 
 #include "moto-protocol.h"
 #include "motogame.h"
@@ -11,16 +12,16 @@ static std::unique_ptr<Motogame> g_pMotogame;
 
 static QString getMotogame(bool LowQ, bool OGL3, bool Fullscreen)
 {
-    QString Prefix = "./";
+    QString Prefix = QCoreApplication::applicationDirPath() + "/";
 #ifdef _WIN32
     if (!OGL3)
     {
         SYSTEM_INFO SysInfo;
         GetNativeSystemInfo(&SysInfo);
         if (SysInfo.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
-            Prefix = "./llvmpipe/64/";
+            Prefix += "llvmpipe/64/";
         else
-            Prefix = "./llvmpipe/32/";
+            Prefix += "llvmpipe/32/";
     }
 #endif
     QSettings settings;
