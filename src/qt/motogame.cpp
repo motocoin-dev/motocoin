@@ -33,6 +33,7 @@ static QString getMotogame(bool LowQ, bool OGL3, bool Fullscreen)
 Motogame::Motogame(bool LowQ, bool OGL3, bool Fullscreen, CWallet* pWallet, QObject *parent) :
     QObject(parent), m_Motogame(this), m_pWallet(pWallet), m_ReserveKey(pWallet), m_pPrevBest(nullptr)
 {
+    m_Motogame.setWorkingDirectory(QCoreApplication::applicationDirPath());
     m_Motogame.start(getMotogame(LowQ, OGL3, Fullscreen));
 
     connect(&m_Motogame, SIGNAL(readyReadStandardOutput()), this, SLOT(onReadAvailable()));
@@ -196,6 +197,7 @@ void watchReplay(bool LowQ, bool OGL3, bool Fullscreen, int nHeight)
     std::string Msg = motoMessage(Work, pIndex->Nonce);
 
     SuicideProcess* pMotogameProcess = new SuicideProcess;
+    pMotogameProcess->setWorkingDirectory(QCoreApplication::applicationDirPath());
     pMotogameProcess->start(getMotogame(LowQ, OGL3, Fullscreen));
     pMotogameProcess->write(Msg.c_str());
 }
