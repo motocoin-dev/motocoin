@@ -13,7 +13,7 @@ Copyright (c) 2014-2014 Motocoin Developers
 
 What is Motocoin?
 ----------------
-    Motocoin is a cryptocurrency utilizing an innovative proof-of-play scheme where coins
+ Motocoin is a cryptocurrency utilizing an innovative proof-of-play scheme where coins
  can only be mined through manual human work - playing a 2D motorbike simulation game, which
  is different from Bitcoin and other crypto-currencies that use a proof-of-work scheme where
  miners must perform difficult computations and then use proof of that work to secure coin
