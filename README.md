@@ -13,32 +13,30 @@ Copyright (c) 2014-2014 Motocoin Developers
 
 What is Motocoin?
 ----------------
- Motocoin is the first Proof-of-Play crypto-currency. It is similar to
-Proof-of-Work but instead of requiring to solve computationally expensive
-puzzles on computer it requires human to solve puzzles that are hard for
-computer. More specifically, people play 2D moto-simulator game (similar to
-Elastomania) on pseudo-randomly generated levels. Each time someone completes
-level faster than the target time, new block is generated and that player gets
-reward. As more people play and better they play the target becomes lower
-and harder to reach.
+    Motocoin is a cryptocurrency utilizing an innovative proof-of-play scheme where coins
+ can only be mined through manual human work - playing a 2D motorbike simulation game, which
+ is different from Bitcoin and other crypto-currencies that use a proof-of-work scheme where
+ miners must perform difficult computations and then use proof of that work to secure coin
+ transactions and get their reward. 
 
-It has the following advantages:
-* No need for expensive mining hardware. To mine it you just need computer
-  and some skill at videogames.
-* No energy is wasted on useless computations.
-* Almost impossible to perform 51% attack. If you control enough hardware
-  you can perform 51% attack on a classic proof-of-work crypto-currency,
-  machines wouldn't bore to fulfill your evil wishes. But people prefer to
-  work for their profit and it would be too expensive to hire enough people,
-  especially considering that most skilled players would rather mine Motocoin
-  than destroy it.
+Advantages:
+ - No need for expensive mining hardware. All you need to mine is an average computer and
+ some skills at computer games.
+ - No energy is wasted on pointless mining computations.
+ - It is more secure as it is almost impossible to perform a 51% attack and it would be
+ very expensive to hire enough people, considering that most skilled players would rather
+ mine Motocoin than destroy it.
 
-Other information:
- - 5 minute block targets
- - subsidy halves in 200k blocks (~2 years) but will never be less than 2 coins per block.
- - ≈40 mln coins in first 12 years, then 200 000 coins per year
- - 100 coins per block
- - 3.5 days (1008 blocks) to retarget difficulty
+Network parameters:
+ - A new block is generated every 1 minute.
+ - The initial reward is 20 motocoins per block.
+ - The block reward gets halved every 1'000'000 blocks (every two years), but it will never
+ be less than 0.4 motocoins per block.
+ - Difficulty is adjusted every 2000 blocks.
+ - ≈40 million coins are to be generated during the first 12 years and ≈200'000 coins per
+ year after.
+ - The 3 developers of Motocoin were each rewarded 150K motocoins, which ensured them a
+ strong reason to support Motocoin. Portions of these coins will be used for bounties and giveaways.
 
 For more information, as well as an immediately useable, binary version of
 the Motocoin client sofware, see http://www.motocoin.org or https://motocoin-dev.github.io/motocoin-site/
