@@ -14,6 +14,7 @@
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
+#include <algorithm>
 
 using namespace std;
 using namespace boost;
@@ -1132,83 +1133,97 @@ unsigned int ComputeMinWork(unsigned int nBase, int64 nTime)
 
 unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *)
 {
+    int bnNew;
     // Genesis block
-    if (pindexLast == NULL)
-        return nProofOfWorkLimit;
-
-    const int CurHeight = pindexLast->nHeight+1;
-
-    // restore target time at block 8000
-    if (CurHeight == 8000)
-        return nProofOfWorkLimit;
-
-    int64 nTargetSpacing;
-    int64 nInterval;
-
-    if (CurHeight < 8000)
-    {
-        nTargetSpacing = 5*60; // 5 minutes
-        nInterval = 1008;
-    }
-    else if (CurHeight > 8000) // Change parameters starting with 8000
-    {
-        nTargetSpacing = 1*60; // 1 minute
-        nInterval = 2000;
-    }
-
-    int64 nTargetTimespan = nInterval*nTargetSpacing;
-
-    // Only change once per interval
-    if (CurHeight % nInterval != 0)
-        return pindexLast->nBits;
-
-    // Litecoin: This fixes an issue where a 51% attack can change difficulty at will.
-    // Go back the full period unless it's the first retarget after genesis. Code courtesy of Art Forz
-    int blockstogoback = nInterval-1;
-    if ((pindexLast->nHeight+1) != nInterval)
-        blockstogoback = nInterval;
-
-    static uint16_t Times[2048];
-
-    // Go back by what we want to be 3.5 days worth of blocks
-    const CBlockIndex* pindexFirst = pindexLast;
-    for (int i = 0; pindexFirst && i < blockstogoback; i++)
-    {
-        Times[i] = pindexFirst->Nonce.NumFrames;
-        pindexFirst = pindexFirst->pprev;
-    }
-    assert(pindexFirst);
-
-    int Middle = blockstogoback/2;
-    std::nth_element(Times, Times + Middle, Times + blockstogoback);
-    int Median = Times[Middle];
-    int Current = pindexLast->nBits;
-    printf("  Current target = %i, median = %i \n", Current, Median);
-
-    // Limit adjustment step
-    int64 nActualTimespan = pindexLast->GetBlockTime() - pindexFirst->GetBlockTime();
-    printf("  nActualTimespan = %" PRI64d "  before bounds\n", nActualTimespan);
-
-    if (nActualTimespan < nTargetTimespan/4)
-        nActualTimespan = nTargetTimespan/4;
-    if (nActualTimespan > nTargetTimespan*4)
-        nActualTimespan = nTargetTimespan*4;
-
-    int bnNew = 2*Current - Median - (Current - Median)*nTargetTimespan/nActualTimespan;
-    if (nActualTimespan > nTargetTimespan)
-        bnNew += 5;
-
-    if (bnNew < Median)
-        bnNew = Median;
-    if (bnNew > (int)nProofOfWorkLimit)
+    if (pindexLast == NULL) {
         bnNew = nProofOfWorkLimit;
+    } else {
+      const int CurHeight = pindexLast->nHeight+1;
 
-    /// debug print
-    printf("GetNextWorkRequired RETARGET\n");
-    printf("nTargetTimespan = %" PRI64d "    nActualTimespan = %" PRI64d "\n", nTargetTimespan, nActualTimespan);
-    printf("Before: %i\n", pindexLast->nBits);
-    printf("After:  %i\n", bnNew);
+      // restore target time at block 8000
+      if (CurHeight == 8000)
+          return nProofOfWorkLimit;
 
+      int64 nTargetSpacing;
+      int64 nInterval;
+
+      if (CurHeight < 8000)
+      {
+          nTargetSpacing = 5*60; // 5 minutes
+          nInterval = 1008;
+      }
+      else if (CurHeight > 8000) // Change parameters starting with 8000
+      {
+          nTargetSpacing = 1*60; // 1 minute
+          nInterval = 2000;
+      }
+      //if(fTestNet) {
+        //nInterval = 10;
+      //}
+
+      // Only change once per interval
+      if (CurHeight % nInterval != 0) {
+          bnNew =  pindexLast->nBits;
+      } else {
+        int64 nTargetTimespan = nInterval*nTargetSpacing;
+        
+        // Litecoin: This fixes an issue where a 51% attack can change difficulty at will.
+        // Go back the full period unless it's the first retarget after genesis. Code courtesy of Art Forz (who is awesome coder.)
+        int blockstogoback = nInterval-1;
+        if ((pindexLast->nHeight+1) != nInterval)
+            blockstogoback = nInterval;
+
+        static uint16_t Times[2048];
+
+        // Go back by what we want to be 3.5 days worth of blocks
+        const CBlockIndex* pindexFirst = pindexLast;
+        for (int i = 0; pindexFirst && i < blockstogoback; i++)
+        {
+            Times[i] = pindexFirst->Nonce.NumFrames;
+            pindexFirst = pindexFirst->pprev;
+        }
+        assert(pindexFirst);
+
+        if(fTestNet) {
+          sort(Times, Times+blockstogoback);
+        }
+
+        int Middle = blockstogoback/2;
+        std::nth_element(Times, Times + Middle, Times + blockstogoback);
+        int Median;
+        if(fTestNet) {
+          Median = (Times[Middle-1]+Times[Middle])/2;
+        } else {
+          Median = Times[Middle];
+        }
+        int Current = pindexLast->nBits;
+        printf("  Current target = %i, median = %i \n", Current, Median);
+
+        // Limit adjustment step
+        int64 nActualTimespan = pindexLast->GetBlockTime() - pindexFirst->GetBlockTime();
+        printf("  nActualTimespan = %" PRI64d "  before bounds\n", nActualTimespan);
+
+        if (nActualTimespan < nTargetTimespan/4)
+            nActualTimespan = nTargetTimespan/4;
+        if (nActualTimespan > nTargetTimespan*4)
+            nActualTimespan = nTargetTimespan*4;
+
+        bnNew = 2*Current - Median - (Current - Median)*nTargetTimespan/nActualTimespan;
+        if (nActualTimespan > nTargetTimespan)
+            bnNew += 5;
+
+        if (bnNew < Median)
+            bnNew = Median;
+        if (bnNew > (int)nProofOfWorkLimit)
+            bnNew = nProofOfWorkLimit;
+
+        /// debug print
+        printf("GetNextWorkRequired RETARGET\n");
+        printf("nTargetTimespan = %" PRI64d "    nActualTimespan = %" PRI64d "\n", nTargetTimespan, nActualTimespan);
+        printf("Before: %i\n", pindexLast->nBits);
+        printf("After:  %i\n", bnNew);
+      }
+    }
     return bnNew;
 }
 
