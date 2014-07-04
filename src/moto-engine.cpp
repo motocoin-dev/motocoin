@@ -557,8 +557,8 @@ bool motoGenerateRandomWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t
 //        }
         if(score>max_score){
             max_score=score;
-            DEBUG_MSG("score: "<<score);
-            DEBUG_MSG("nonce: "<<pow->Nonce);
+            //DEBUG_MSG("score: "<<score);
+            //DEBUG_MSG("nonce: "<<pow->Nonce);
         }
         if(score>max_t){break;}
     }
@@ -598,15 +598,15 @@ bool motoGenerateRandomWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t
 
 bool motoGenerateGoodWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t* pWork, MotoPoW* pow){
 //    return motoGenerateWorld(pWorld, pState, pWork, pow->Nonce);
-    return motoGenerateRandomWorld(pWorld, pState, pWork, pow);
+//    return motoGenerateRandomWorld(pWorld, pState, pWork, pow);
     int bestWorld=0;
     int64_t bestScore=0,score=0;
     int32_t tmpVec[2];
     int max_t=300;
     int i=0;
-    while(bestScore<210){
+    while(bestScore<30 && i < 100){ //210){
         i++;
-        pow->Nonce++;
+        pow->Nonce=i;
         if(!motoGenerateRandomWorld(pWorld, pState, pWork, pow)){
             continue;
         }
@@ -622,13 +622,13 @@ bool motoGenerateGoodWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t* 
         if(score>bestScore){
             bestScore=score;
             bestWorld=i;
-//            cout<<"score:"<<bestScore<<endl;
+            std::cout<<"~score:"<<bestScore<<std::endl;
         }
         score=0;
 
     }
-
-    motoGenerateRandomWorld(pWorld, pState, pWork, pow);
+    pow->Nonce = i;
+    //motoGenerateRandomWorld(pWorld, pState, pWork, pow);
     return true;
 }
 
