@@ -453,7 +453,7 @@ static void goToNextWorld()
         this_thread::sleep_for(milliseconds(1));
         parseInput();
     }
-    while (!motoGenerateWorld(&g_World, &g_FirstFrame, g_Work.Block, g_PoW.Nonce));
+	while (!motoGenerateGoodWorld(&g_World, &g_FirstFrame, g_Work.Block, &g_PoW));
 		
 	prepareWorldRendering(g_World);
 	restart();
