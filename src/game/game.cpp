@@ -743,11 +743,11 @@ static void onKeyPress(GLFWwindow* pWindow, int Key, int Scancode, int Action, i
 		break;
 
 	case ACTION_INC_TIME_SPEED:
-		g_Speed = max(g_Speed/1.1, 0.3);
+		g_Speed = max(g_Speed/1.1, 0.003);
 		break;
 
 	case ACTION_DEC_TIME_SPEED:
-		g_Speed = min(g_Speed*1.1, 3.0);
+		g_Speed = min(g_Speed*1.1, 300.0);
 		break;
 	}
 }
