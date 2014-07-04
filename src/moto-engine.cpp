@@ -13,6 +13,9 @@
 #include <memory.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <iostream>
+#include <stdio.h>
+#include "bignum.h"
 
 #ifdef NO_OPENSSL_SHA
     extern void *SHA512(uint8_t *buffer, size_t len, void *resblock);
@@ -474,11 +477,29 @@ EMotoResult motoAdvance(MotoState* pState, MotoPoW* pPoW, const MotoWorld* pWorl
 bool motoGenerateWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t* pWork, uint32_t Nonce)
 {
 	initTables();
-
 	uint8_t BlockPlusNonce[MOTO_WORK_SIZE + 1 + sizeof(uint32_t)];
 	memcpy(BlockPlusNonce + 1, &Nonce, sizeof(uint32_t));
 	memcpy(BlockPlusNonce + 1 + sizeof(uint32_t), pWork, MOTO_WORK_SIZE);
 
+    int nBits = (pWork[MOTO_WORK_SIZE-1] << 24) | (pWork[MOTO_WORK_SIZE-2] << 16) | (pWork[MOTO_WORK_SIZE-3] << 8) | (pWork[MOTO_WORK_SIZE-4]);
+    
+    CBigNum bnNewWork;
+    bnNewWork.SetCompact(nBits & (~0x3FFF));
+    if(bnNewWork != 0) {
+      //std::cout << std::hex << bnNewWork.GetCompact() << std::endl;
+      uint8_t H[512/8];
+      SHA512(BlockPlusNonce+1, MOTO_WORK_SIZE+sizeof(uint32_t), H);
+      uint256 Hp;
+      memcpy(Hp.begin(), H, 256/8);
+      CBigNum Hb(Hp);
+      //std::cout << std::hex << Hb.GetCompact() << std::endl;
+      //std::cout.flush();
+      if(Hb >= bnNewWork) {
+        return false;
+      }
+    }
+    
+    
 	for (int i = 0; i < 2*MOTO_MAP_SIZE*MOTO_MAP_SIZE/(512/8); i++)
 	{
 		BlockPlusNonce[0] = i;
@@ -515,7 +536,8 @@ bool motoCheck(const uint8_t* pWork, const MotoPoW* pPoW)
 
 	MotoWorld World;
 	MotoState State;
-	motoGenerateWorld(&World, &State, pWork, pPoW->Nonce);
+	if(!motoGenerateWorld(&World, &State, pWork, pPoW->Nonce))
+      return false;
 	return motoReplay(&State, pPoW, &World, MOTO_MAX_FRAMES + 10);
 }
 

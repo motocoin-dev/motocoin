@@ -422,24 +422,38 @@ static void releaseWork(const MotoWork& Work)
 	cout << motoMessage(Work);
 }
 
+static void parseInput();
+
 static void goToNextWorld()
 {
 	if (g_State == STATE_REPLAYING || g_State == STATE_SUCCESS)
 		return;
 
-	// If there is new work then switch to it.
-	if (g_HasNextWork)
-	{
-		releaseWork(g_Work);
-		g_Work = g_NextWork;
-		g_PlayingForFun = false;
-		g_HasNextWork = false;
-	}
+	float LetterSize = 0.02f;
+	const char* pMsg = "Generating next world...";
+    char BUF[64];
 
+    sprintf(BUF, pMsg, g_PoW.Nonce);
+    glClear(GL_COLOR_BUFFER_BIT);
+    drawText(BUF, 0, 0, 1.5f*LetterSize, 1);
+    glfwSwapBuffers(g_pWindow);
+    
 	// Find next good world (some worlds are ill-formed).
-	do
+	do {
+        // If there is new work then switch to it.
+        if (g_HasNextWork)
+        {
+          releaseWork(g_Work);
+          g_Work = g_NextWork;
+          g_PlayingForFun = false;
+          g_HasNextWork = false;
+          g_PoW.Nonce=0;
+        }      
 	    g_PoW.Nonce++;
-	while (!motoGenerateWorld(&g_World, &g_FirstFrame, g_Work.Block, g_PoW.Nonce));
+        this_thread::sleep_for(milliseconds(1));
+        parseInput();
+    }
+    while (!motoGenerateWorld(&g_World, &g_FirstFrame, g_Work.Block, g_PoW.Nonce));
 		
 	prepareWorldRendering(g_World);
 	restart();
@@ -479,6 +493,7 @@ static void parseInput()
 					Work.IsNew = true;
 				releaseWork(g_NextWork);
 			}
+			Work.TimeTarget &= MOTO_TARGET_MASK;
 			g_NextWork = Work;
 			g_HasNextWork = true;
 		}
@@ -486,6 +501,7 @@ static void parseInput()
 		{
 			g_State = STATE_REPLAYING;
 			g_PlayingForFun = false;
+            Work.TimeTarget &= MOTO_TARGET_MASK;
 			g_Work = Work;
 			g_PoW = PoW;
 			motoGenerateWorld(&g_World, &g_FirstFrame, g_Work.Block, g_PoW.Nonce);
@@ -622,6 +638,10 @@ static MotoWork getWorkForFun()
 	srand((unsigned int)system_clock::now().time_since_epoch().count());
 	for (int i = 0; i < MOTO_WORK_SIZE; i++)
 		Work.Block[i] = rand() % 256;
+    Work.Block[MOTO_WORK_SIZE-1] = 0x00; //0x20;
+    Work.Block[MOTO_WORK_SIZE-2] = 0x00; //0x70;
+    Work.Block[MOTO_WORK_SIZE-3] = 0x0a; // | (3 << 6);
+    Work.Block[MOTO_WORK_SIZE-4] = 0xF1;
 	Work.IsNew = false;
 	Work.TimeTarget = 250*60;
 	//sprintf(Work.Msg, "Block %i, Reward %f MTC, Target %.3f", Work.BlockHeight, 5000000000/100000000.0, Work.TimeTarget/250.0);

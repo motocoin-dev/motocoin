@@ -25,6 +25,8 @@
 /** Number of bytes in block description. */
 #define MOTO_WORK_SIZE 76
 
+#define MOTO_TARGET_MASK 0x3FFF
+
 /** World scale coefficient. */
 #define MOTO_SCALE 5
 
