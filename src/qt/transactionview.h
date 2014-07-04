@@ -72,6 +72,8 @@ private slots:
     void copyAmount();
     void copyTxID();
 
+    void showReplay();
+    
 signals:
     void doubleClicked(const QModelIndex&);
 
