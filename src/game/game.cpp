@@ -129,7 +129,7 @@ string getKeyName(int Key)
 		return string("Keypad ") + Str;
 	}
 	if (Key < -10)
-		return  "Press new key...";
+		return  "Press the new key...";
 
 	/* Printable keys */
 	switch (Key)
@@ -193,25 +193,25 @@ struct Control
 static Control g_Controls[ACTION_COUNT] =
 {
 	{ "Show/Hide controls", GLFW_KEY_F1 },
-	{ "Restart current level", GLFW_KEY_F5 },
-	{ "Go to next level", GLFW_KEY_F6 },
+	{ "Restart the current map", GLFW_KEY_F5 },
+	{ "Generate a new map", GLFW_KEY_F6 },
 
 	{ "Rotate counter-clockwise", GLFW_KEY_LEFT },
 	{ "Rotate clockwise", GLFW_KEY_RIGHT },
 	{ "Accelerate", GLFW_KEY_UP },
 	{ "Brake", GLFW_KEY_DOWN },
-	{ "Turnaround", GLFW_KEY_SPACE },
+	{ "Change direction", GLFW_KEY_SPACE },
 
-	{ "Decrease time speed", GLFW_KEY_Z },
-	{ "Increase time speed", GLFW_KEY_X },
+	{ "Slow down", GLFW_KEY_Z },
+	{ "Speed up", GLFW_KEY_X },
 	{ "Rewind", GLFW_KEY_R },
 
-	{ "Switch view", GLFW_KEY_S },
+	{ "Switch views", GLFW_KEY_S },
 	{ "Increase scale", GLFW_KEY_KP_ADD },
 	{ "Decrease scale", GLFW_KEY_KP_SUBTRACT },
-	{ "Show/Hide map", GLFW_KEY_M },
-	{ "Magnify map", GLFW_KEY_KP_MULTIPLY },
-	{ "Reduce map", GLFW_KEY_KP_DIVIDE }
+	{ "Show/Hide mini-map", GLFW_KEY_M },
+	{ "Magnify mini-map", GLFW_KEY_KP_MULTIPLY },
+	{ "Shrink mini-map", GLFW_KEY_KP_DIVIDE }
 };
 
 static string printControls(int iLine, bool Exclude)
