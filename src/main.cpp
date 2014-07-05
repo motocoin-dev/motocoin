@@ -38,6 +38,7 @@ map<uint256, CBlockIndex*> mapBlockIndex;
 uint256 hashGenesisBlock;
 uint256 hashGenesisMerkleRoot;
 static const uint32_t nProofOfWorkLimit = MOTO_MAX_FRAMES;
+static CBigNum bnProofOfWorkLimit(~uint256(0) >> 1);
 CBlockIndex* pindexGenesisBlock = NULL;
 int nBestHeight = -1;
 uint256 nBestChainWork = 0;
@@ -1132,83 +1133,138 @@ unsigned int ComputeMinWork(unsigned int nBase, int64 nTime)
 
 unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *)
 {
+    int bnNew;
     // Genesis block
-    if (pindexLast == NULL)
-        return nProofOfWorkLimit;
-
-    const int CurHeight = pindexLast->nHeight+1;
-
-    // restore target time at block 8000
-    if (CurHeight == 8000)
-        return nProofOfWorkLimit;
-
-    int64 nTargetSpacing;
-    int64 nInterval;
-
-    if (CurHeight < 8000)
-    {
-        nTargetSpacing = 5*60; // 5 minutes
-        nInterval = 1008;
-    }
-    else if (CurHeight > 8000) // Change parameters starting with 8000
-    {
-        nTargetSpacing = 1*60; // 1 minute
-        nInterval = 2000;
-    }
-
-    int64 nTargetTimespan = nInterval*nTargetSpacing;
-
-    // Only change once per interval
-    if (CurHeight % nInterval != 0)
-        return pindexLast->nBits;
-
-    // Litecoin: This fixes an issue where a 51% attack can change difficulty at will.
-    // Go back the full period unless it's the first retarget after genesis. Code courtesy of Art Forz
-    int blockstogoback = nInterval-1;
-    if ((pindexLast->nHeight+1) != nInterval)
-        blockstogoback = nInterval;
-
-    static uint16_t Times[2048];
-
-    // Go back by what we want to be 3.5 days worth of blocks
-    const CBlockIndex* pindexFirst = pindexLast;
-    for (int i = 0; pindexFirst && i < blockstogoback; i++)
-    {
-        Times[i] = pindexFirst->Nonce.NumFrames;
-        pindexFirst = pindexFirst->pprev;
-    }
-    assert(pindexFirst);
-
-    int Middle = blockstogoback/2;
-    std::nth_element(Times, Times + Middle, Times + blockstogoback);
-    int Median = Times[Middle];
-    int Current = pindexLast->nBits;
-    printf("  Current target = %i, median = %i \n", Current, Median);
-
-    // Limit adjustment step
-    int64 nActualTimespan = pindexLast->GetBlockTime() - pindexFirst->GetBlockTime();
-    printf("  nActualTimespan = %" PRI64d "  before bounds\n", nActualTimespan);
-
-    if (nActualTimespan < nTargetTimespan/4)
-        nActualTimespan = nTargetTimespan/4;
-    if (nActualTimespan > nTargetTimespan*4)
-        nActualTimespan = nTargetTimespan*4;
-
-    int bnNew = 2*Current - Median - (Current - Median)*nTargetTimespan/nActualTimespan;
-    if (nActualTimespan > nTargetTimespan)
-        bnNew += 5;
-
-    if (bnNew < Median)
-        bnNew = Median;
-    if (bnNew > (int)nProofOfWorkLimit)
+    if (pindexLast == NULL) {
         bnNew = nProofOfWorkLimit;
+    } else {
+      const int CurHeight = pindexLast->nHeight+1;
 
-    /// debug print
-    printf("GetNextWorkRequired RETARGET\n");
-    printf("nTargetTimespan = %" PRI64d "    nActualTimespan = %" PRI64d "\n", nTargetTimespan, nActualTimespan);
-    printf("Before: %i\n", pindexLast->nBits);
-    printf("After:  %i\n", bnNew);
+      // restore target time at block 8000
+      if (CurHeight == 8000)
+          return nProofOfWorkLimit;
 
+      int64 nTargetSpacing;
+      int64 nInterval;
+
+      if (CurHeight < 8000)
+      {
+          nTargetSpacing = 5*60; // 5 minutes
+          nInterval = 1008;
+      }
+      else if (CurHeight > 8000) // Change parameters starting with 8000
+      {
+          nTargetSpacing = 1*60; // 1 minute
+          nInterval = 2000;
+      }
+      if(fTestNet) {
+        nTargetSpacing = 60;
+        nInterval = 10;
+      }
+
+      // Only change once per interval
+      if (CurHeight % nInterval != 0) {
+          bnNew =  pindexLast->nBits;
+      } else {
+        //calculate new game frequency relative to wall clock frequency
+        int64 nTargetTimespan = nInterval*nTargetSpacing;
+        
+        // Litecoin: This fixes an issue where a 51% attack can change difficulty at will.
+        // Go back the full period unless it's the first retarget after genesis. Code courtesy of Art Forz
+        int blockstogoback = nInterval-1;
+        if ((pindexLast->nHeight+1) != nInterval)
+            blockstogoback = nInterval;
+
+        static uint16_t Times[2048];
+
+        // Go back by what we want to be 3.5 days worth of blocks
+        const CBlockIndex* pindexFirst = pindexLast;
+        unsigned int Sum = 0;
+        for (int i = 0; pindexFirst && i < blockstogoback; i++)
+        {
+            Times[i] = pindexFirst->Nonce.NumFrames;
+            Sum += Times[i];
+            pindexFirst = pindexFirst->pprev;
+        }
+        assert(pindexFirst);
+
+        int Middle = blockstogoback/2;
+        std::nth_element(Times, Times + Middle, Times + blockstogoback);
+        int Median;
+        Median = Times[Middle];
+        int Current = pindexLast->nBits & 0x3FFF;
+        printf("GetNextWorkRequired  Current target = %i, median = %i \n", Current, Median);
+
+        // Limit adjustment step
+        int64 nActualTimespan = pindexLast->GetBlockTime() - pindexFirst->GetBlockTime();
+        printf("GetNextWorkRequired  nActualTimespan = %" PRI64d "  before bounds\n", nActualTimespan);
+
+        if (nActualTimespan < nTargetTimespan/4)
+            nActualTimespan = nTargetTimespan/4;
+        if (nActualTimespan > nTargetTimespan*4)
+            nActualTimespan = nTargetTimespan*4;
+
+        bnNew = 2*Current - Median - (Current - Median)*nTargetTimespan/nActualTimespan;
+        if (nActualTimespan > nTargetTimespan)
+            bnNew += 5;
+
+        if (bnNew < Median)
+            bnNew = Median;
+        
+        if (bnNew > (int)nProofOfWorkLimit)
+            bnNew = nProofOfWorkLimit;
+
+        
+        /// debug print
+        printf("GetNextWorkRequired RETARGET\n");
+        printf("GetNextWorkRequired nTargetTimespan = %" PRI64d "    nActualTimespan = %" PRI64d "\n", nTargetTimespan, nActualTimespan);
+        printf("GetNextWorkRequired Before: %i\n", pindexLast->nBits & MOTO_TARGET_MASK);
+        printf("GetNextWorkRequired After:  %i\n", bnNew);
+        //calculate new block frequency relative to game frequency
+        if(fTestNet) {
+          printf("GetNextWorkRequired Game Sum: %i\n", Sum);
+          bnNew = bnNew & MOTO_TARGET_MASK;
+          unsigned int lastdiff = pindexLast->nBits >> 14;
+
+          // Limit adjustment step
+          nActualTimespan = (pindexLast->GetBlockTime() - pindexFirst->GetBlockTime())*250;
+          
+          //If new time is more constrained
+          if((bnNew * nInterval) < Sum) {
+            //Give the network the benefit of the doubt on the difference
+            //TODO: Calculate actual adjustment ratio
+            Sum = bnNew * nInterval;
+          }
+          
+          if (nActualTimespan < Sum/4)
+            nActualTimespan = Sum/4;
+          if (nActualTimespan > Sum*4)
+            nActualTimespan = Sum*4;          
+          printf("GetNextWorkRequired 2 nActualTimespan = %" PRI64d "\n", nActualTimespan);
+          
+          //calculate framerate work defecit
+          CBigNum bnNewWork;
+          if(lastdiff == 0) {
+            bnNewWork = bnProofOfWorkLimit;
+          } else {
+            bnNewWork.SetCompact(pindexLast->nBits & (~MOTO_TARGET_MASK));
+          }
+          printf("GetNextWorkRequired Old work: %X\n", bnNewWork.GetCompact() & (~0x3FFF));
+          bnNewWork *= nActualTimespan;
+          printf("GetNextWorkRequired Mid work: %X\n", bnNewWork.GetCompact() & (~0x3FFF));          
+          bnNewWork /= Sum;
+          printf("GetNextWorkRequired Proposed work: %X\n", bnNewWork.GetCompact() & (~0x3FFF));
+          if(bnNewWork > bnProofOfWorkLimit)
+            bnNewWork = bnProofOfWorkLimit;
+          printf("GetNextWorkRequired New work: %X\n", bnNewWork.GetCompact() & (~0x3FFF));
+          
+          
+          
+          bnNew |= ((bnNewWork.GetCompact()) & (~0x3FFF)) | 1 << 14; //set low bit so compact never truncates to a 0 value
+            //TODO: Make a compact representation with a smaller mantissa, instead
+        }
+      }
+    }
     return bnNew;
 }
 
@@ -1503,11 +1559,11 @@ bool CTransaction::CheckInputs(CValidationState &state, CCoinsViewCache &inputs,
 }
 
 
-bool CBlock::CheckPoW() const
+bool CBlock::CheckPoW()
 {
     if (GetHash() == hashGenesisBlock)
         return true;
-    return Nonce.NumFrames < nBits && motoCheck((const uint8_t*)&nVersion, &Nonce);
+    return Nonce.NumFrames < (nBits & MOTO_TARGET_MASK) && motoCheck((const uint8_t*)&nVersion, &Nonce);
 }
 
 
@@ -2105,7 +2161,7 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
 }
 
 
-bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerkleRoot) const
+bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerkleRoot)
 {
     // These are checks that are independent of context
     // that can be verified before saving an orphan block.

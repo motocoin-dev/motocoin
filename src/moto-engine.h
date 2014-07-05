@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2014 The Motocoin developers
+// Copyright (c) 2014 The Motocoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -25,6 +25,8 @@
 /** Number of bytes in block description. */
 #define MOTO_WORK_SIZE 76
 
+#define MOTO_TARGET_MASK 0x3FFF
+
 /** World scale coefficient. */
 #define MOTO_SCALE 5
 
@@ -42,6 +44,10 @@ Entire range is [-8192; 8192].
 /* Start and finish positions (in integer coordinates). */
 static const int32_t g_MotoStart[2]  = {          0, -300000000 }; /**< Position of start  in world map (in integer coordinates). */
 static const int32_t g_MotoFinish[2] = { 2140000000,  400000000 }; /**< Position of finish in world map (in integer coordinates). */
+
+static const int64_t g_MotoStartL[2]  = {          0, -300000000+((long)1<<32) }; /**< Position of start  in world map (in integer coordinates). */
+static const int64_t g_MotoFinishL[2] = { 2140000000,  400000000 }; /**< Position of finish in world map (in integer coordinates). */
+
 
 /**
 Coefficient for converting integer coordinates to real ones.
@@ -169,7 +175,7 @@ void motoInitPoW(MotoPoW* pPoW);
 *
 * @return true if game was completed in less than TimeTarget frames.
 */
-bool motoCheck(const uint8_t* pBlock, const MotoPoW* pPoW);
+bool motoCheck(const uint8_t* pBlock, MotoPoW* pPoW);
 
 /** \brief Generate pseudo-random world.
 *
@@ -181,7 +187,7 @@ bool motoCheck(const uint8_t* pBlock, const MotoPoW* pPoW);
 * @return true if generated world is well-formed and false otherwise. Ill-formed world is one that seems impossible to complete but not necessarily so.
 */
 bool motoGenerateWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t* pBlock, uint32_t Nonce);
-
+bool motoGenerateGoodWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t* pBlock, MotoPoW* pow);
 /** \brief Evaluate several game frames.
 *
 * @param pState (in/out) - Game state that will be modified.

@@ -580,6 +580,9 @@ QVariant TransactionTableModel::data(const QModelIndex &index, int role) const
                                           rec->status.maturity != TransactionStatus::Mature);
     case FormattedAmountRole:
         return formatTxAmount(rec, false);
+    case DepthRole:
+      int block = (rec->status.cur_num_blocks - rec->status.depth)+1;
+      return block;
     }
     return QVariant();
 }

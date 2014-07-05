@@ -1371,7 +1371,7 @@ public:
         vMerkleTree.clear();
     }
 
-    bool CheckPoW() const;
+    bool CheckPoW();
 
     CBlockHeader GetBlockHeader() const
     {
@@ -1531,7 +1531,7 @@ public:
     bool AddToBlockIndex(CValidationState &state, const CDiskBlockPos &pos);
 
     // Context-independent validity checks
-    bool CheckBlock(CValidationState &state, bool fCheckPOW=true, bool fCheckMerkleRoot=true) const;
+    bool CheckBlock(CValidationState &state, bool fCheckPOW=true, bool fCheckMerkleRoot=true);
 
     // Store block on disk
     // if dbp is provided, the file is known to already reside on disk
