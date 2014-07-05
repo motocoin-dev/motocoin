@@ -2,6 +2,7 @@
 #include <QCoreApplication>
 
 #include "moto-protocol.h"
+#include "moto-engine.h"
 #include "motogame.h"
 #include "main.h"
 #ifdef _WIN32
@@ -147,7 +148,7 @@ void Motogame::updateBlock()
     // Construct work.
     MotoWork Work;
     Work.IsNew = IsNew;
-    Work.TimeTarget = pBlock->nBits;
+    Work.TimeTarget = pBlock->nBits & MOTO_TARGET_MASK;
     snprintf(Work.Msg, sizeof(Work.Msg), "Block %i, Reward %f MOTO, Target %.3f.", pindexBest->nHeight + 1, pBlock->vtx[0].vout[0].nValue/100000000.0, Work.TimeTarget/250.0);
     memcpy(Work.Block, &pBlock->nVersion, sizeof(Work.Block));
 

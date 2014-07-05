@@ -52,7 +52,8 @@ public:
         /** Is transaction confirmed? */
         ConfirmedRole,
         /** Formatted amount, without brackets when unconfirmed */
-        FormattedAmountRole
+        FormattedAmountRole,
+        DepthRole
     };
 
     int rowCount(const QModelIndex &parent) const;

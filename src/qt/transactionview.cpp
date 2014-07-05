@@ -124,6 +124,7 @@ TransactionView::TransactionView(QWidget *parent) :
     transactionView = view;
 
     // Actions
+    QAction *replayAction = new QAction(tr("Replay block"), this);
     QAction *copyAddressAction = new QAction(tr("Copy address"), this);
     QAction *copyLabelAction = new QAction(tr("Copy label"), this);
     QAction *copyAmountAction = new QAction(tr("Copy amount"), this);
@@ -138,6 +139,7 @@ TransactionView::TransactionView(QWidget *parent) :
     contextMenu->addAction(copyTxIDAction);
     contextMenu->addAction(editLabelAction);
     contextMenu->addAction(showDetailsAction);
+    contextMenu->addAction(replayAction);
 
     // Connect actions
     connect(dateWidget, SIGNAL(activated(int)), this, SLOT(chooseDate(int)));
@@ -154,6 +156,7 @@ TransactionView::TransactionView(QWidget *parent) :
     connect(copyTxIDAction, SIGNAL(triggered()), this, SLOT(copyTxID()));
     connect(editLabelAction, SIGNAL(triggered()), this, SLOT(editLabel()));
     connect(showDetailsAction, SIGNAL(triggered()), this, SLOT(showDetails()));
+    connect(replayAction, SIGNAL(triggered()), this, SLOT(showReplay()));
 }
 
 void TransactionView::setModel(WalletModel *model)
@@ -382,6 +385,21 @@ void TransactionView::showDetails()
         dlg.exec();
     }
 }
+
+extern void watchReplay(bool LowQ, bool OGL3, bool Fullscreen, int nHeight);
+
+void TransactionView::showReplay()
+{
+  GUIUtil::copyEntryData(transactionView, 0, TransactionTableModel::DepthRole);
+
+  QModelIndexList selection = transactionView->selectionModel()->selectedRows();
+  AddressTableModel *addressBook = model->getAddressTableModel();
+  if(!addressBook)
+    return;
+  int D = selection.at(0).data(TransactionTableModel::DepthRole).toInt();
+  watchReplay(false, true, false, D);
+}
+  
 
 QWidget *TransactionView::createDateRangeWidget()
 {
