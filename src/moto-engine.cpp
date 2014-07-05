@@ -604,9 +604,10 @@ bool motoGenerateGoodWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t* 
     int32_t tmpVec[2];
     int max_t=300;
     int i=0;
+    pow->Nonce=0;
     while(bestScore<30 && i < 100){ //210){
+        pow->Nonce=rand();
         i++;
-        pow->Nonce=i;
         if(!motoGenerateRandomWorld(pWorld, pState, pWork, pow)){
             continue;
         }
@@ -621,7 +622,7 @@ bool motoGenerateGoodWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t* 
         }
         if(score>bestScore){
             bestScore=score;
-            bestWorld=i;
+            bestWorld=pow->Nonce;
             std::cout<<"~score:"<<bestScore<<std::endl;
         }
         score=0;
