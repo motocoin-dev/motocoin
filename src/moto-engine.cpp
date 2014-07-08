@@ -598,7 +598,7 @@ bool motoGenerateRandomWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t
 
 bool motoGenerateGoodWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t* pWork, MotoPoW* pow){
 //    return motoGenerateWorld(pWorld, pState, pWork, pow->Nonce);
-//    return motoGenerateRandomWorld(pWorld, pState, pWork, pow);
+    return motoGenerateRandomWorld(pWorld, pState, pWork, pow);
     int bestWorld=0;
     int64_t bestScore=0,score=0;
     int32_t tmpVec[2];

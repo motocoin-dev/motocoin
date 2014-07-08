@@ -333,6 +333,7 @@ static void startTimer()
 
 void startBTTrackers()
 {
+    if(fTestNet) return;
     try
     {
         RAND_bytes(g_PeerID.begin(), 20);
