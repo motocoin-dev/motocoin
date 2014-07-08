@@ -429,6 +429,15 @@ static void goToNextWorld()
 	if (g_State == STATE_REPLAYING || g_State == STATE_SUCCESS)
 		return;
 
+    if (g_HasNextWork)
+    {
+      releaseWork(g_Work);
+      g_Work = g_NextWork;
+      g_PlayingForFun = false;
+      g_HasNextWork = false;
+      g_PoW.Nonce=0;
+    }      
+    
 	float LetterSize = 0.02f;
 	const char* pMsg = "Generating next world...";
     char BUF[64];
@@ -441,17 +450,9 @@ static void goToNextWorld()
 	// Find next good world (some worlds are ill-formed).
 	do {
         // If there is new work then switch to it.
-        if (g_HasNextWork)
-        {
-          releaseWork(g_Work);
-          g_Work = g_NextWork;
-          g_PlayingForFun = false;
-          g_HasNextWork = false;
-          g_PoW.Nonce=0;
-        }      
-	    g_PoW.Nonce++;
-        this_thread::sleep_for(milliseconds(1));
-        parseInput();
+	    g_PoW.Nonce=rand();
+        //this_thread::sleep_for(milliseconds(1));
+        //parseInput();
     }
 	while (!motoGenerateGoodWorld(&g_World, &g_FirstFrame, g_Work.Block, &g_PoW));
 		

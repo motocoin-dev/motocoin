@@ -345,7 +345,7 @@ Value getchains (const Array& params, bool fHelp)
          Object obj;
          obj.push_back (Pair ("height", block.nHeight));
          obj.push_back (Pair ("hash", block.phashBlock->GetHex ()));
-         res.push_back (obj);
+         
 
          const bool isMain = (&block == pindexBest);
          obj.push_back (Pair ("is_best", isMain));
@@ -376,9 +376,8 @@ Value getchains (const Array& params, bool fHelp)
            }
          else
            obj.push_back (Pair ("branch_len", 0));
-         
-         
-         
+
+         res.push_back (obj);         
       }
        
        return res;

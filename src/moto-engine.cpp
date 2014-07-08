@@ -537,6 +537,9 @@ bool motoGenerateRandomWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t
         {
             BlockPlusNonce[0] = i;
             SHA512(BlockPlusNonce, MOTO_WORK_SIZE + 1 + sizeof(uint32_t), ((uint8_t*)pWorld->Map) +  512/8*i);
+#ifdef TESTMODE
+            memset(((uint8_t*)pWorld->Map) +  512/8*i, 0, 512/8);
+#endif
 //            if(i<7&&i>1&&(pWorld->Map[i*2][5][0]<0||pWorld->Map[i*2][6][0]>0||
 //                   pWorld->Map[i*2+1][5][0]<0||pWorld->Map[i*2+1][6][0]>0)){
 //                break;
@@ -598,7 +601,7 @@ bool motoGenerateRandomWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t
 
 bool motoGenerateGoodWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t* pWork, MotoPoW* pow){
 //    return motoGenerateWorld(pWorld, pState, pWork, pow->Nonce);
-//    return motoGenerateRandomWorld(pWorld, pState, pWork, pow);
+    return motoGenerateRandomWorld(pWorld, pState, pWork, pow);
     int bestWorld=0;
     int64_t bestScore=0,score=0;
     int32_t tmpVec[2];
@@ -645,6 +648,9 @@ for (int i = 0; i < 2*MOTO_MAP_SIZE*MOTO_MAP_SIZE/(512/8); i++)
 {
 BlockPlusNonce[0] = i;
         SHA512(BlockPlusNonce, MOTO_WORK_SIZE + 1 + sizeof(uint32_t), ((uint8_t*)pWorld->Map) + 512/8*i);
+        #ifdef TESTMODE
+        memset(((uint8_t*)pWorld->Map) +  512/8*i, 0, 512/8);
+        #endif
 }
 for (int i = 0; i < MOTO_MAP_SIZE; i++)
 {

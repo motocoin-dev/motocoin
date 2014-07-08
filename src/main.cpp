@@ -1192,7 +1192,7 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
         std::nth_element(Times, Times + Middle, Times + blockstogoback);
         int Median;
         Median = Times[Middle];
-        int Current = pindexLast->nBits & 0x3FFF;
+        int Current = pindexLast->nBits & MOTO_TARGET_MASK;
         printf("GetNextWorkRequired  Current target = %i, median = %i \n", Current, Median);
 
         // Limit adjustment step
@@ -1210,7 +1210,7 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
 
         if (bnNew < Median)
             bnNew = Median;
-        
+
         if (bnNew > (int)nProofOfWorkLimit)
             bnNew = nProofOfWorkLimit;
 
@@ -1221,9 +1221,11 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
         printf("GetNextWorkRequired Before: %i\n", pindexLast->nBits & MOTO_TARGET_MASK);
         printf("GetNextWorkRequired After:  %i\n", bnNew);
         //calculate new block frequency relative to game frequency
-        if(fTestNet) {
+        if(CurHeight >= 100000 || fTestNet) {
           printf("GetNextWorkRequired Game Sum: %i\n", Sum);
           bnNew = bnNew & MOTO_TARGET_MASK;
+          if(bnNew < nProofOfWorkLimit)
+            bnNew += 1;
           unsigned int lastdiff = pindexLast->nBits >> 14;
 
           // Limit adjustment step
@@ -1249,18 +1251,18 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
           } else {
             bnNewWork.SetCompact(pindexLast->nBits & (~MOTO_TARGET_MASK));
           }
-          printf("GetNextWorkRequired Old work: %X\n", bnNewWork.GetCompact() & (~0x3FFF));
+          printf("GetNextWorkRequired Old work: %X\n", bnNewWork.GetCompact() & (~MOTO_TARGET_MASK));
           bnNewWork *= nActualTimespan;
-          printf("GetNextWorkRequired Mid work: %X\n", bnNewWork.GetCompact() & (~0x3FFF));          
+          printf("GetNextWorkRequired Mid work: %X\n", bnNewWork.GetCompact() & (~MOTO_TARGET_MASK));          
           bnNewWork /= Sum;
-          printf("GetNextWorkRequired Proposed work: %X\n", bnNewWork.GetCompact() & (~0x3FFF));
+          printf("GetNextWorkRequired Proposed work: %X\n", bnNewWork.GetCompact() & (~MOTO_TARGET_MASK));
           if(bnNewWork > bnProofOfWorkLimit)
             bnNewWork = bnProofOfWorkLimit;
-          printf("GetNextWorkRequired New work: %X\n", bnNewWork.GetCompact() & (~0x3FFF));
+          printf("GetNextWorkRequired New work: %X\n", bnNewWork.GetCompact() & (~MOTO_TARGET_MASK));
           
           
           
-          bnNew |= ((bnNewWork.GetCompact()) & (~0x3FFF)) | 1 << 14; //set low bit so compact never truncates to a 0 value
+          bnNew |= ((bnNewWork.GetCompact()) & (~MOTO_TARGET_MASK)) | 1 << 14; //set low bit so compact never truncates to a 0 value
             //TODO: Make a compact representation with a smaller mantissa, instead
         }
       }
