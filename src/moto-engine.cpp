@@ -15,7 +15,6 @@
 #include <stdint.h>
 #include <iostream>
 #include <stdio.h>
-#include "bignum.h"
 #include "game/debug.h"
 
 #ifdef NO_OPENSSL_SHA
@@ -547,8 +546,8 @@ bool motoGenerateRandomWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t
         }
 
         for(i=0;i<=max_t;i++){
-            P[0]=(g_MotoFinishL[0]/max_t*(max_t-i)+g_MotoStartL[0]/max_t*(i));
-            P[1]=((g_MotoFinishL[1])/max_t*(max_t-i)+g_MotoStartL[1]/max_t*(i));
+            P[0]=int32_t((g_MotoFinishL[0]/max_t*(max_t-i)+g_MotoStartL[0]/max_t*(i)));
+            P[1]=int32_t(((g_MotoFinishL[1])/max_t*(max_t-i)+g_MotoStartL[1]/max_t*(i)));
             if(getF(pWorld,P)<-offset){
                 score++;
             }

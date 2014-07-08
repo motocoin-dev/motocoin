@@ -256,7 +256,7 @@ static int getHoveredControl()
 	glfwGetCursorPos(g_pWindow, &MouseX, &MouseY);
 	if (MouseX/g_ViewportSize.x > 0.5)
 		return -1;
-	int iHoverLine = MouseY/(g_ViewportSize.x*g_ControlsLetterSize);
+	int iHoverLine = int(MouseY/(g_ViewportSize.x*g_ControlsLetterSize));
 	switch (iHoverLine)
 	{
 	case 0:
@@ -803,6 +803,7 @@ static void GLFW_ErrorCallback(int iError, const char* pString)
 
 int main(int argc, char** argv)
 {
+	srand((unsigned int)system_clock::now().time_since_epoch().count());
 	bool NoFun = false;
 	bool Fullscreen = false;
 	for (int i = 0; i < argc; i++)
