@@ -168,6 +168,14 @@ typedef struct
 	uint8_t  Block[MOTO_WORK_SIZE];
 } MotoWork;
 
+#ifdef NO_OPENSSL_SHA
+  extern void *SHA512(uint8_t *buffer, size_t len, void *resblock);
+#else
+  #include <openssl/sha.h>
+#endif
+
+void initTables();
+
 /** Initialize proof-of-work to zero. */
 void motoInitPoW(MotoPoW* pPoW);
 
@@ -193,6 +201,7 @@ bool motoCheck(const uint8_t* pBlock, MotoPoW* pPoW);
 */
 bool motoGenerateWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t* pBlock, uint32_t Nonce);
 bool motoGenerateGoodWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t* pBlock, MotoPoW* pow);
+bool motoGenerateGoodWorldRound(MotoWorld* pWorld, MotoState* pState, const uint8_t* pBlock, MotoPoW* pow);
 /** \brief Evaluate several game frames.
 *
 * @param pState (in/out) - Game state that will be modified.

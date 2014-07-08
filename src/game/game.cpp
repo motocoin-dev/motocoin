@@ -75,6 +75,21 @@ static enum
 	STATE_SUCCESS
 } g_State;
 
+extern enum _g_Filter
+{
+  FILTER_NONE,
+  FILTER_BASIC,
+  FILTER_DOUBLE,
+  
+  FILTER_COUNT
+} g_Filter;
+
+static char* FilterNames[FILTER_COUNT] = {
+  "'None'",
+  "'Minim1ner basic'",
+  "'Minim1ner mix'"
+};
+
 static bool g_MotoDir = false;
 
 static double g_PrevTime;
@@ -88,6 +103,7 @@ enum EAction
 	ACTION_SHOW_CONTROLS,
 	ACTION_RESTART_EVEL,
 	ACTION_NEXT_LEVEL,
+    ACTION_MAP_FILTER,
 	ACTION_ROTATE_CCW,
 	ACTION_ROTATE_CW,
 	ACTION_GAS,
@@ -190,11 +206,14 @@ struct Control
 	}
 };
 
+
+
 static Control g_Controls[ACTION_COUNT] =
 {
 	{ "Show/Hide controls", GLFW_KEY_F1 },
 	{ "Restart current level", GLFW_KEY_F5 },
 	{ "Go to next level", GLFW_KEY_F6 },
+    { "Change map filter", GLFW_KEY_F7 },    
 
 	{ "Rotate counter-clockwise", GLFW_KEY_LEFT },
 	{ "Rotate clockwise", GLFW_KEY_RIGHT },
@@ -227,25 +246,25 @@ static string printControls(int iLine, bool Exclude)
 		Controls << "General:\n";
 	else
 		Controls << "\n";
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 4; i++)
 		print(i);
 	if (Exclude)
 		Controls << "\nGameplay:\n";
 	else
 		Controls << "\n\n";
-	for (int i = 3; i < 8; i++)
+	for (int i = 4; i < 9; i++)
 		print(i);
 	if (Exclude)
 		Controls << "\nTime:\n";
 	else
 		Controls << "\n\n";
-	for (int i = 8; i < 11; i++)
+	for (int i = 9; i < 12; i++)
 		print(i);
 	if (Exclude)
 		Controls << "\nView:\n";
 	else
 		Controls << "\n\n";
-	for (int i = 11; i < 17; i++)
+	for (int i = 12; i < 18; i++)
 		print(i);
 	return Controls.str();
 }
@@ -269,8 +288,8 @@ static int getHoveredControl()
 		iHoverLine = -1;
 	}
 	iHoverLine -= 1;
-	if (iHoverLine > 3)
-		iHoverLine -= 2;
+	if (iHoverLine > 4)
+		iHoverLine -= 3;
 	if (iHoverLine > 8)
 		iHoverLine -= 2;
 	if (iHoverLine > 11)
@@ -422,6 +441,7 @@ static void releaseWork(const MotoWork& Work)
 	cout << motoMessage(Work);
 }
 
+
 static void parseInput();
 static MotoWork getWorkForFun();
 
@@ -433,10 +453,10 @@ static void goToNextWorld()
     g_PoW.Nonce=0;
     
 	float LetterSize = 0.02f;
-	const char* pMsg = "Generating next world...";
+	const char* pMsg = "Generating next map with filter %s";
     char BUF[64];
 
-    sprintf(BUF, pMsg, g_PoW.Nonce);
+    sprintf(BUF, pMsg, FilterNames[g_Filter]);
     glClear(GL_COLOR_BUFFER_BIT);
     drawText(BUF, 0, 0, 1.5f*LetterSize, 1);
     glfwSwapBuffers(g_pWindow);
@@ -741,9 +761,24 @@ static void onKeyPress(GLFWwindow* pWindow, int Key, int Scancode, int Action, i
 		restart();
 		break;
 
-	case ACTION_NEXT_LEVEL:
+    case ACTION_MAP_FILTER:
+      switch(g_Filter) {
+        case FILTER_NONE:
+          g_Filter = FILTER_BASIC;
+          break;
+        case FILTER_BASIC:
+          g_Filter = FILTER_DOUBLE;
+          break;
+        case FILTER_DOUBLE:
+          g_Filter = FILTER_NONE;
+          break;
+      }
+
+    case ACTION_NEXT_LEVEL:
 		goToNextWorld();
 		break;
+    
+      break;
 
 	case ACTION_SWITCH_VIEW:
 		g_OverallView = !g_OverallView;
