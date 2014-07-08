@@ -1,4 +1,4 @@
-// Copyright (c) 2014 The Motocoin developers
+﻿// Copyright (c) 2014 The Motocoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -42,12 +42,17 @@ Entire range is [-8192; 8192].
 #define MOTO_MAX_FRAMES 500*30
 
 /* Start and finish positions (in integer coordinates). */
+#ifdef TESTMODE
+static const int32_t g_MotoStart[2]  = {          0, -300000000 }; /**< Position of start  in world map (in integer coordinates). */
+static const int32_t g_MotoFinish[2] = {          0, -900000000 }; /**< Position of finish in world map (in integer coordinates). */
+static const int64_t g_MotoStartL[2]  = {          0, -300000000+((long)1<<32) }; /**< Position of start  in world map (in integer coordinates). */
+static const int64_t g_MotoFinishL[2] = {          0, -900000000 }; /**< Position of finish in world map (in integer coordinates). */
+#else
 static const int32_t g_MotoStart[2]  = {          0, -300000000 }; /**< Position of start  in world map (in integer coordinates). */
 static const int32_t g_MotoFinish[2] = { 2140000000,  400000000 }; /**< Position of finish in world map (in integer coordinates). */
-
 static const int64_t g_MotoStartL[2]  = {          0, -300000000+((long)1<<32) }; /**< Position of start  in world map (in integer coordinates). */
 static const int64_t g_MotoFinishL[2] = { 2140000000,  400000000 }; /**< Position of finish in world map (in integer coordinates). */
-
+#endif
 
 /**
 Coefficient for converting integer coordinates to real ones.
