@@ -423,20 +423,14 @@ static void releaseWork(const MotoWork& Work)
 }
 
 static void parseInput();
+static MotoWork getWorkForFun();
 
 static void goToNextWorld()
 {
 	if (g_State == STATE_REPLAYING || g_State == STATE_SUCCESS)
 		return;
 
-    if (g_HasNextWork)
-    {
-      releaseWork(g_Work);
-      g_Work = g_NextWork;
-      g_PlayingForFun = false;
-      g_HasNextWork = false;
-      g_PoW.Nonce=0;
-    }      
+    g_PoW.Nonce=0;
     
 	float LetterSize = 0.02f;
 	const char* pMsg = "Generating next world...";
@@ -450,9 +444,21 @@ static void goToNextWorld()
 	// Find next good world (some worlds are ill-formed).
 	do {
         // If there is new work then switch to it.
-	    g_PoW.Nonce=rand();
-        //this_thread::sleep_for(milliseconds(1));
-        //parseInput();
+        if(g_State != STATE_REPLAYING) {
+          parseInput();
+          if (g_HasNextWork)
+          {
+            releaseWork(g_Work);
+            g_Work = g_NextWork;
+            g_PlayingForFun = false;
+            g_HasNextWork = false;
+            g_PoW.Nonce = 0;
+          }      
+        }
+        if(g_PlayingForFun)
+          g_Work = getWorkForFun();
+      
+	    g_PoW.Nonce++;
     }
 	while (!motoGenerateGoodWorld(&g_World, &g_FirstFrame, g_Work.Block, &g_PoW));
 		
@@ -636,7 +642,7 @@ static void play()
 static MotoWork getWorkForFun()
 {
 	MotoWork Work;
-	srand((unsigned int)system_clock::now().time_since_epoch().count());
+	srand(time(NULL));
 	for (int i = 0; i < MOTO_WORK_SIZE; i++)
 		Work.Block[i] = rand() % 256;
     Work.Block[MOTO_WORK_SIZE-1] = 0x00; //0x20;
@@ -867,7 +873,7 @@ int main(int argc, char** argv)
 	motoInitPoW(&g_PoW);
 
 	// Let's start to play.
-	g_Work = getWorkForFun();
+    g_Work = getWorkForFun();
 	goToNextWorld();
 	
 	g_State = STATE_PLAYING;
