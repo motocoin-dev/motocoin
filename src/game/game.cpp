@@ -844,7 +844,7 @@ static void GLFW_ErrorCallback(int iError, const char* pString)
 
 int main(int argc, char** argv)
 {
-	srand((unsigned int)system_clock::now().time_since_epoch().count());
+	srand(time(NULL));
 	bool NoFun = false;
 	bool Fullscreen = false;
 	for (int i = 0; i < argc; i++)
