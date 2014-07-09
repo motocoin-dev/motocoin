@@ -145,7 +145,7 @@ string getKeyName(int Key)
 		return string("Keypad ") + Str;
 	}
 	if (Key < -10)
-		return  "Press new key...";
+		return  "Press the new key...";
 
 	/* Printable keys */
 	switch (Key)
@@ -211,26 +211,26 @@ struct Control
 static Control g_Controls[ACTION_COUNT] =
 {
 	{ "Show/Hide controls", GLFW_KEY_F1 },
-	{ "Restart current level", GLFW_KEY_F5 },
-	{ "Go to next level", GLFW_KEY_F6 },
-    { "Change map filter", GLFW_KEY_F7 },    
+	{ "Restart the current map", GLFW_KEY_F5 },
+	{ "Generate a new map", GLFW_KEY_F6 },
+	{ "Change map filter", GLFW_KEY_F7 },    
 
 	{ "Rotate counter-clockwise", GLFW_KEY_LEFT },
 	{ "Rotate clockwise", GLFW_KEY_RIGHT },
 	{ "Accelerate", GLFW_KEY_UP },
 	{ "Brake", GLFW_KEY_DOWN },
-	{ "Turnaround", GLFW_KEY_SPACE },
+	{ "Change direction", GLFW_KEY_SPACE },
 
-	{ "Decrease time speed", GLFW_KEY_Z },
-	{ "Increase time speed", GLFW_KEY_X },
+	{ "Slow down", GLFW_KEY_Z },
+	{ "Speed up", GLFW_KEY_X },
 	{ "Rewind", GLFW_KEY_R },
 
-	{ "Switch view", GLFW_KEY_S },
+	{ "Switch views", GLFW_KEY_S },
 	{ "Increase scale", GLFW_KEY_KP_ADD },
 	{ "Decrease scale", GLFW_KEY_KP_SUBTRACT },
-	{ "Show/Hide map", GLFW_KEY_M },
-	{ "Magnify map", GLFW_KEY_KP_MULTIPLY },
-	{ "Reduce map", GLFW_KEY_KP_DIVIDE }
+	{ "Show/Hide mini-map", GLFW_KEY_M },
+	{ "Magnify mini-map", GLFW_KEY_KP_MULTIPLY },
+	{ "Shrink mini-map", GLFW_KEY_KP_DIVIDE }
 };
 
 static string printControls(int iLine, bool Exclude)
@@ -275,7 +275,7 @@ static int getHoveredControl()
 	glfwGetCursorPos(g_pWindow, &MouseX, &MouseY);
 	if (MouseX/g_ViewportSize.x > 0.5)
 		return -1;
-	int iHoverLine = MouseY/(g_ViewportSize.x*g_ControlsLetterSize);
+	int iHoverLine = int(MouseY/(g_ViewportSize.x*g_ControlsLetterSize));
 	switch (iHoverLine)
 	{
 	case 0:
@@ -844,6 +844,7 @@ static void GLFW_ErrorCallback(int iError, const char* pString)
 
 int main(int argc, char** argv)
 {
+	srand((unsigned int)system_clock::now().time_since_epoch().count());
 	bool NoFun = false;
 	bool Fullscreen = false;
 	for (int i = 0; i < argc; i++)

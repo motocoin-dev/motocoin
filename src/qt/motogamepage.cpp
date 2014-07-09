@@ -1,4 +1,5 @@
 #include <QSettings>
+#include <QFile>
 
 #include "motogamepage.h"
 #include "gamehelpdialog.h"
@@ -73,9 +74,23 @@ void MotogamePage::timerEvent(QTimerEvent *event)
         ui->labelBlockCount->setText(tr("Enter any number from 1 to %1").arg(nBestHeight));
     }
 }
+/*
+void dumpNonce()
+{
+    QFile File("nonces.txt");
+    File.open(QIODevice::WriteOnly);
+
+    for (CBlockIndex* pIndex = pindexGenesisBlock; pIndex; pIndex = pIndex->pnext)
+    {
+        QString N = QString("%1,").arg(pIndex->Nonce.Nonce);
+        File.write(N.toUtf8());
+    }
+}*/
 
 void MotogamePage::on_watchButton_clicked()
 {
+   /* dumpNonce();
+    return;*/
     int Value = ui->BlockIndex->value();
     if (0 < Value && Value <= nBestHeight)
         watchReplay(!ui->checkHighQ->isChecked(), ui->radioOGL3->isChecked(), ui->checkFullscreen->isChecked(), Value);
