@@ -665,9 +665,9 @@ static MotoWork getWorkForFun()
 	srand(time(NULL));
 	for (int i = 0; i < MOTO_WORK_SIZE; i++)
 		Work.Block[i] = rand() % 256;
-    Work.Block[MOTO_WORK_SIZE-1] = 0x00; //0x20;
-    Work.Block[MOTO_WORK_SIZE-2] = 0x00; //0x70;
-    Work.Block[MOTO_WORK_SIZE-3] = 0x0a; // | (3 << 6);
+    Work.Block[MOTO_WORK_SIZE-1] = 0x20; //min difficulty
+    Work.Block[MOTO_WORK_SIZE-2] = 0x7F;
+    Work.Block[MOTO_WORK_SIZE-3] = 0xC0 | (3 << 6);
     Work.Block[MOTO_WORK_SIZE-4] = 0xF1;
 	Work.IsNew = false;
 	Work.TimeTarget = 250*60;

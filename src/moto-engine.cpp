@@ -15,7 +15,6 @@
 #include <stdint.h>
 #include <iostream>
 #include <stdio.h>
-#include "bignum.h"
 #include "game/debug.h"
 
 
@@ -506,6 +505,44 @@ EMotoResult motoAdvance(MotoState* pState, MotoPoW* pPoW, const MotoWorld* pWorl
 	return MOTO_CONTINUE;
 }
 
+bool payWork(uint8_t* BlockPlusNonce, uint32_t work, int nonce) {
+  if(work == 0) return true;
+  uint8_t H[512];
+  SHA512(BlockPlusNonce+1, MOTO_WORK_SIZE+sizeof(uint32_t), H);
+  //printf("Hash check %X\n", work);
+  
+  uint8_t work0 = (work >> 16) & 0xFF;
+  uint8_t work1 = (work >> 8) & 0xFF;
+  uint8_t work2 = work & 0xFF;
+  uint8_t bnTgt[32];
+  memset(bnTgt, 0, 32);
+  uint8_t digits = work >> 24 & 0xFF;
+  if(digits > 32) digits=32;
+  switch(digits) {
+    case 0:
+      break;
+    case 1:
+      bnTgt[31]=work0;
+    case 2:
+      bnTgt[30]=work0;
+      bnTgt[31]=work1;
+    default:
+      bnTgt[32-digits]=work0;
+      bnTgt[33-digits]=work1;
+      bnTgt[34-digits]=work2;
+  }
+  int check;
+  for(check=0;check<32;check++) {
+    if(H[check] > bnTgt[check]) {
+      return false;
+    }
+    if(H[check] < bnTgt[check]) {
+      return true;
+    }
+  }
+  return false;
+}
+
 enum Filter
 {
   FILTER_NONE,
@@ -524,19 +561,28 @@ bool motoGenerateRandomWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t
   bool t=false;
   int max_t=18,score=0,max_score=0,max_i=0,i,n=0;
   
-  uint8_t BlockPlusNonce[MOTO_WORK_SIZE + 1 + sizeof(uint32_t)];
+  uint8_t BlockPlusNonce[MOTO_WORK_SIZE + 1 + sizeof(uint32_t) + 255];
   memcpy(BlockPlusNonce + 1 + sizeof(uint32_t), pWork, MOTO_WORK_SIZE);
   
   int offset = -300;
-  
+
+  uint nBits = (pWork[MOTO_WORK_SIZE-1] << 24) | (pWork[MOTO_WORK_SIZE-2] << 16) | (pWork[MOTO_WORK_SIZE-3] << 8) | (pWork[MOTO_WORK_SIZE-4]);
+  uint work = nBits & ~MOTO_TARGET_MASK;
+  uint32_t snonce = pow->Nonce;
   while(t!=true){
-    if(n%100000==0){DEBUG_MSG("n: "<<n);}
     n++;
-    i=0;score=0;
+    if(n%100000==0){DEBUG_MSG("n: "<<n);}
+    //DEBUG_MSG("n: " << n);
+    if(pow->Nonce == snonce-1)
+      return false;
     pow->Nonce++;
+    i=0;score=0;
     memcpy(BlockPlusNonce + 1, &(pow->Nonce), sizeof(uint32_t));
     
-    SHA512(BlockPlusNonce, MOTO_WORK_SIZE + 1 + sizeof(uint32_t), ((uint8_t*)pWorld->Map) +  512/8*7);
+    //SHA512(BlockPlusNonce, MOTO_WORK_SIZE + 1 + sizeof(uint32_t), ((uint8_t*)pWorld->Map) +  512/8*7);
+
+    if(!payWork(BlockPlusNonce, work, pow->Nonce))
+      continue;
     
     
     for (i = 0; i < 2*MOTO_MAP_SIZE*MOTO_MAP_SIZE/(512/8); i++)
@@ -612,7 +658,7 @@ bool motoGenerateGoodWorldRound(MotoWorld* pWorld, MotoState* pState, const uint
   int max_t=300;
   int i=0;
   pow->Nonce=0;
-  while(bestScore<131 && i < 100){
+  while(bestScore<131){
     pow->Nonce=rand();
     i++;
     if(!motoGenerateRandomWorld(pWorld, pState, pWork, pow)){
@@ -661,6 +707,12 @@ initTables();
 uint8_t BlockPlusNonce[MOTO_WORK_SIZE + 1 + sizeof(uint32_t)];
 memcpy(BlockPlusNonce + 1, &Nonce, sizeof(uint32_t));
 memcpy(BlockPlusNonce + 1 + sizeof(uint32_t), pWork, MOTO_WORK_SIZE);
+
+  uint nBits = (pWork[MOTO_WORK_SIZE-1] << 24) | (pWork[MOTO_WORK_SIZE-2] << 16) | (pWork[MOTO_WORK_SIZE-3] << 8) | (pWork[MOTO_WORK_SIZE-4]);
+  uint work = nBits & ~MOTO_TARGET_MASK;
+  
+  if(!payWork(BlockPlusNonce, work, Nonce)) return false;
+
 
 for (int i = 0; i < 2*MOTO_MAP_SIZE*MOTO_MAP_SIZE/(512/8); i++)
 {
