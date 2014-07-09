@@ -17,11 +17,7 @@
 #include <stdio.h>
 #include "game/debug.h"
 
-#ifdef NO_OPENSSL_SHA
-    extern void *SHA512(uint8_t *buffer, size_t len, void *resblock);
-#else
-    #include <openssl/sha.h>
-#endif
+
 
 #include "moto-engine.h"
 #include "moto-engine-const.h"
@@ -116,7 +112,7 @@ static uint64_t isqrt(uint64_t num)
 	return res;
 }
 
-static void initTables()
+void initTables()
 {
 	if (g_TablesInitialized)
 		return;
@@ -509,131 +505,200 @@ EMotoResult motoAdvance(MotoState* pState, MotoPoW* pPoW, const MotoWorld* pWorl
 	return MOTO_CONTINUE;
 }
 
+bool payWork(uint8_t* BlockPlusNonce, uint32_t work, int nonce) {
+  if(work == 0) return true;
+  uint8_t H[512];
+  SHA512(BlockPlusNonce+1, MOTO_WORK_SIZE+sizeof(uint32_t), H);
+  //printf("Hash check %X\n", work);
+  
+  uint8_t work0 = (work >> 16) & 0xFF;
+  uint8_t work1 = (work >> 8) & 0xFF;
+  uint8_t work2 = work & 0xFF;
+  uint8_t bnTgt[32];
+  memset(bnTgt, 0, 32);
+  uint8_t digits = work >> 24 & 0xFF;
+  if(digits > 32) digits=32;
+  switch(digits) {
+    case 0:
+      break;
+    case 1:
+      bnTgt[31]=work0;
+    case 2:
+      bnTgt[30]=work0;
+      bnTgt[31]=work1;
+    default:
+      bnTgt[32-digits]=work0;
+      bnTgt[33-digits]=work1;
+      bnTgt[34-digits]=work2;
+  }
+  int check;
+  for(check=0;check<32;check++) {
+    if(H[check] > bnTgt[check]) {
+      return false;
+    }
+    if(H[check] < bnTgt[check]) {
+      return true;
+    }
+  }
+  return false;
+}
+
+enum Filter
+{
+  FILTER_NONE,
+  FILTER_BASIC,
+  FILTER_DOUBLE,
+  
+  FILTER_COUNT
+};
+Filter g_Filter=FILTER_DOUBLE;
+
 
 bool motoGenerateRandomWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t* pWork, MotoPoW* pow)
 {
-    int32_t P[2];
-	initTables();
-    bool t=false;
-    int max_t=18,score=0,max_score=0,max_i=0,i,n=0;
+  int32_t P[2];
+  initTables();
+  bool t=false;
+  int max_t=18,score=0,max_score=0,max_i=0,i,n=0;
+  
+  uint8_t BlockPlusNonce[MOTO_WORK_SIZE + 1 + sizeof(uint32_t) + 255];
+  memcpy(BlockPlusNonce + 1 + sizeof(uint32_t), pWork, MOTO_WORK_SIZE);
+  
+  int offset = -300;
 
-    uint8_t BlockPlusNonce[MOTO_WORK_SIZE + 1 + sizeof(uint32_t)];
-    memcpy(BlockPlusNonce + 1 + sizeof(uint32_t), pWork, MOTO_WORK_SIZE);
+  uint nBits = (pWork[MOTO_WORK_SIZE-1] << 24) | (pWork[MOTO_WORK_SIZE-2] << 16) | (pWork[MOTO_WORK_SIZE-3] << 8) | (pWork[MOTO_WORK_SIZE-4]);
+  uint work = nBits & ~MOTO_TARGET_MASK;
+  uint32_t snonce = pow->Nonce;
+  while(t!=true){
+    n++;
+    if(n%100000==0){DEBUG_MSG("n: "<<n);}
+    //DEBUG_MSG("n: " << n);
+    if(pow->Nonce == snonce-1)
+      return false;
+    pow->Nonce++;
+    i=0;score=0;
+    memcpy(BlockPlusNonce + 1, &(pow->Nonce), sizeof(uint32_t));
+    
+    //SHA512(BlockPlusNonce, MOTO_WORK_SIZE + 1 + sizeof(uint32_t), ((uint8_t*)pWorld->Map) +  512/8*7);
 
-    int offset = -300;
-
-    while(t!=true){
-        if(n%100000==0){DEBUG_MSG("n: "<<n);}
-        n++;
-        i=0;score=0;
-        pow->Nonce++;
-        memcpy(BlockPlusNonce + 1, &(pow->Nonce), sizeof(uint32_t));
-
-        SHA512(BlockPlusNonce, MOTO_WORK_SIZE + 1 + sizeof(uint32_t), ((uint8_t*)pWorld->Map) +  512/8*7);
-
-
-        for (i = 0; i < 2*MOTO_MAP_SIZE*MOTO_MAP_SIZE/(512/8); i++)
-        {
-            BlockPlusNonce[0] = i;
-            SHA512(BlockPlusNonce, MOTO_WORK_SIZE + 1 + sizeof(uint32_t), ((uint8_t*)pWorld->Map) +  512/8*i);
-#ifdef TESTMODE
-            memset(((uint8_t*)pWorld->Map) +  512/8*i, 0, 512/8);
-#endif
-//            if(i<7&&i>1&&(pWorld->Map[i*2][5][0]<0||pWorld->Map[i*2][6][0]>0||
-//                   pWorld->Map[i*2+1][5][0]<0||pWorld->Map[i*2+1][6][0]>0)){
-//                break;
-//            }
-        }
-
-        for(i=0;i<=max_t;i++){
-            P[0]=int32_t((g_MotoFinishL[0]/max_t*(max_t-i)+g_MotoStartL[0]/max_t*(i)));
-            P[1]=int32_t(((g_MotoFinishL[1])/max_t*(max_t-i)+g_MotoStartL[1]/max_t*(i)));
-            if(getF(pWorld,P)<-offset){
-                score++;
-            }
-        }
-//        if(i>max_i){
-//            max_i=i;
-//            cout<<"i: "<<i<<endl;
-//            cout<<"n: "<<pow->Nonce<<endl;
-//        }
-        if(score>max_score){
-            max_score=score;
-            //DEBUG_MSG("score: "<<score);
-            //DEBUG_MSG("nonce: "<<pow->Nonce);
-        }
-        if(score>max_t){break;}
+    if(!payWork(BlockPlusNonce, work, pow->Nonce))
+      continue;
+    
+    
+    for (i = 0; i < 2*MOTO_MAP_SIZE*MOTO_MAP_SIZE/(512/8); i++)
+    {
+      BlockPlusNonce[0] = i;
+      SHA512(BlockPlusNonce, MOTO_WORK_SIZE + 1 + sizeof(uint32_t), ((uint8_t*)pWorld->Map) +  512/8*i);
+      #ifdef TESTMODE
+      memset(((uint8_t*)pWorld->Map) +  512/8*i, 0, 512/8);
+      #endif
+      //            if(i<7&&i>1&&(pWorld->Map[i*2][5][0]<0||pWorld->Map[i*2][6][0]>0||
+      //                   pWorld->Map[i*2+1][5][0]<0||pWorld->Map[i*2+1][6][0]>0)){
+      //                break;
+      //            }
     }
-
-    for (int i = 0; i < MOTO_MAP_SIZE; i++)
-	{
-		pWorld->Map[i][0][0] = 0;
-		pWorld->Map[i][0][1] = 127;
-		//pWorld->Map[i][MOTO_MAP_SIZE-1][0] = 0;
-		//pWorld->Map[i][MOTO_MAP_SIZE-1][1] = -127;
-	}
-
-	memset(pState, 0, sizeof(MotoState));
-	pState->iLastRotate = -10000;
-	pState->Wheels[0].Pos[0] = g_MotoStart[0];
-	pState->Wheels[0].Pos[1] = g_MotoStart[1];
-	pState->Wheels[1].Pos[0] = pState->Wheels[0].Pos[0] + g_WheelDist;
-	pState->Wheels[1].Pos[1] = pState->Wheels[0].Pos[1];
-	pState->Bike.Pos[0] = pState->Wheels[0].Pos[0] + g_BikePos0;
-	pState->Bike.Pos[1] = pState->Wheels[0].Pos[1] + g_BikePos1;
-	pState->HeadPos[0] = pState->Bike.Pos[0];
-	pState->HeadPos[1] = pState->Bike.Pos[1] + g_HeadPos;
-
-	/* Check that finish is not inside of rock and also test one frame to see if something is wrong. */
-    MotoState TestFrame = *pState;
-    bool goodFin = getGroundCollideDist65536(g_MotoFinish, pWorld) > g_65536WheelR ;
-    bool goodStart = advanceOneFrame(&TestFrame, MOTO_IDLE, MOTO_NO_ROTATION, pWorld) == MOTO_CONTINUE;
-    bool res = goodFin&&goodStart ;
-    if(!goodFin){
-        DEBUG_MSG("ill formed fin");
+    
+    for(i=0;i<=max_t;i++){
+      P[0]=(g_MotoFinishL[0]/max_t*(max_t-i)+g_MotoStartL[0]/max_t*(i));
+      P[1]=((g_MotoFinishL[1])/max_t*(max_t-i)+g_MotoStartL[1]/max_t*(i));
+      if(getF(pWorld,P)<-offset){
+        score++;
+      }
     }
-    if(!goodStart){
-        DEBUG_MSG("ill formed start");
+    //        if(i>max_i){
+    //            max_i=i;
+    //            cout<<"i: "<<i<<endl;
+    //            cout<<"n: "<<pow->Nonce<<endl;
+    //        }
+    if(score>max_score){
+      max_score=score;
+      //DEBUG_MSG("score: "<<score);
+      //DEBUG_MSG("nonce: "<<pow->Nonce);
     }
-    return res;
+    if(score>max_t){break;}
+  }
+  
+  for (int i = 0; i < MOTO_MAP_SIZE; i++)
+  {
+    pWorld->Map[i][0][0] = 0;
+    pWorld->Map[i][0][1] = 127;
+    //pWorld->Map[i][MOTO_MAP_SIZE-1][0] = 0;
+    //pWorld->Map[i][MOTO_MAP_SIZE-1][1] = -127;
+  }
+  
+  memset(pState, 0, sizeof(MotoState));
+  pState->iLastRotate = -10000;
+  pState->Wheels[0].Pos[0] = g_MotoStart[0];
+  pState->Wheels[0].Pos[1] = g_MotoStart[1];
+  pState->Wheels[1].Pos[0] = pState->Wheels[0].Pos[0] + g_WheelDist;
+  pState->Wheels[1].Pos[1] = pState->Wheels[0].Pos[1];
+  pState->Bike.Pos[0] = pState->Wheels[0].Pos[0] + g_BikePos0;
+  pState->Bike.Pos[1] = pState->Wheels[0].Pos[1] + g_BikePos1;
+  pState->HeadPos[0] = pState->Bike.Pos[0];
+  pState->HeadPos[1] = pState->Bike.Pos[1] + g_HeadPos;
+  
+  /* Check that finish is not inside of rock and also test one frame to see if something is wrong. */
+  MotoState TestFrame = *pState;
+  bool goodFin = getGroundCollideDist65536(g_MotoFinish, pWorld) > g_65536WheelR ;
+  bool goodStart = advanceOneFrame(&TestFrame, MOTO_IDLE, MOTO_NO_ROTATION, pWorld) == MOTO_CONTINUE;
+  bool res = goodFin&&goodStart ;
+  if(!goodFin){
+    DEBUG_MSG("ill formed fin");
+  }
+  if(!goodStart){
+    DEBUG_MSG("ill formed start");
+  }
+  return res;
+}
+
+bool motoGenerateGoodWorldRound(MotoWorld* pWorld, MotoState* pState, const uint8_t* pWork, MotoPoW* pow) {
+  int bestWorld=0;
+  int64_t bestScore=0,score=0;
+  int32_t tmpVec[2];
+  int max_t=300;
+  int i=0;
+  pow->Nonce=0;
+  while(bestScore<131){
+    pow->Nonce=rand();
+    i++;
+    if(!motoGenerateRandomWorld(pWorld, pState, pWork, pow)){
+      continue;
+    }
+    for(int32_t t=0;t<max_t;t++){
+      //            tmpVec[1]=g_MotoFinish[1]+(g_MotoStart[1]-g_MotoFinish[1])/100*t/100*t;
+      //            tmpVec[0]=(g_MotoFinish[0]/max_t*(max_t-t)+g_MotoStart[0]/max_t*t);
+      tmpVec[0]=(g_MotoFinish[0]/max_t*t+g_MotoStart[0]/max_t*(max_t-t));
+      tmpVec[1]=(g_MotoFinish[1]/max_t*t+g_MotoStart[1]/max_t*(max_t-t));
+      int dist=getGroundCollideDist65536(tmpVec, pWorld);
+      score+=dist>g_65536WheelR*3?1:0;
+      //score+=dist;
+    }
+    if(score>bestScore){
+      bestScore=score;
+      bestWorld=pow->Nonce;
+      std::cout<<"~score:"<<bestScore<<std::endl;
+    }
+    score=0;
+    
+  }
+  pow->Nonce = bestWorld;
+  motoGenerateWorld(pWorld, pState, pWork, pow->Nonce);
+  return true;
 }
 
 bool motoGenerateGoodWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t* pWork, MotoPoW* pow){
-//    return motoGenerateWorld(pWorld, pState, pWork, pow->Nonce);
-    return motoGenerateRandomWorld(pWorld, pState, pWork, pow);
-    int bestWorld=0;
-    int64_t bestScore=0,score=0;
-    int32_t tmpVec[2];
-    int max_t=300;
-    int i=0;
-    pow->Nonce=0;
-    while(bestScore<30 && i < 100){ //210){
-        pow->Nonce=rand();
-        i++;
-        if(!motoGenerateRandomWorld(pWorld, pState, pWork, pow)){
-            continue;
-        }
-        for(int32_t t=0;t<max_t;t++){
-//            tmpVec[1]=g_MotoFinish[1]+(g_MotoStart[1]-g_MotoFinish[1])/100*t/100*t;
-//            tmpVec[0]=(g_MotoFinish[0]/max_t*(max_t-t)+g_MotoStart[0]/max_t*t);
-            tmpVec[0]=(g_MotoFinish[0]/max_t*t+g_MotoStart[0]/max_t*(max_t-t));
-            tmpVec[1]=(g_MotoFinish[1]/max_t*t+g_MotoStart[1]/max_t*(max_t-t));
-            int dist=getGroundCollideDist65536(tmpVec, pWorld);
-            score+=dist>g_65536WheelR*3?1:0;
-            //score+=dist;
-        }
-        if(score>bestScore){
-            bestScore=score;
-            bestWorld=pow->Nonce;
-            std::cout<<"~score:"<<bestScore<<std::endl;
-        }
-        score=0;
-
-    }
-    pow->Nonce = i;
-    //motoGenerateRandomWorld(pWorld, pState, pWork, pow);
-    return true;
+  switch(g_Filter) {
+    case FILTER_NONE:
+      return motoGenerateWorld(pWorld, pState, pWork, pow->Nonce);
+    case FILTER_BASIC:
+      return motoGenerateRandomWorld(pWorld, pState, pWork, pow);
+    case FILTER_DOUBLE:
+      return motoGenerateGoodWorldRound(pWorld, pState, pWork, pow);
+  }
+  return false;
 }
+
+
 
 bool motoGenerateWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t* pWork, uint32_t Nonce)
 {
@@ -642,6 +707,12 @@ initTables();
 uint8_t BlockPlusNonce[MOTO_WORK_SIZE + 1 + sizeof(uint32_t)];
 memcpy(BlockPlusNonce + 1, &Nonce, sizeof(uint32_t));
 memcpy(BlockPlusNonce + 1 + sizeof(uint32_t), pWork, MOTO_WORK_SIZE);
+
+  uint nBits = (pWork[MOTO_WORK_SIZE-1] << 24) | (pWork[MOTO_WORK_SIZE-2] << 16) | (pWork[MOTO_WORK_SIZE-3] << 8) | (pWork[MOTO_WORK_SIZE-4]);
+  uint work = nBits & ~MOTO_TARGET_MASK;
+  
+  if(!payWork(BlockPlusNonce, work, Nonce)) return false;
+
 
 for (int i = 0; i < 2*MOTO_MAP_SIZE*MOTO_MAP_SIZE/(512/8); i++)
 {

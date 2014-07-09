@@ -75,6 +75,21 @@ static enum
 	STATE_SUCCESS
 } g_State;
 
+extern enum _g_Filter
+{
+  FILTER_NONE,
+  FILTER_BASIC,
+  FILTER_DOUBLE,
+  
+  FILTER_COUNT
+} g_Filter;
+
+static char* FilterNames[FILTER_COUNT] = {
+  "'None'",
+  "'Minim1ner basic'",
+  "'Minim1ner mix'"
+};
+
 static bool g_MotoDir = false;
 
 static double g_PrevTime;
@@ -88,6 +103,7 @@ enum EAction
 	ACTION_SHOW_CONTROLS,
 	ACTION_RESTART_EVEL,
 	ACTION_NEXT_LEVEL,
+    ACTION_MAP_FILTER,
 	ACTION_ROTATE_CCW,
 	ACTION_ROTATE_CW,
 	ACTION_GAS,
@@ -190,11 +206,14 @@ struct Control
 	}
 };
 
+
+
 static Control g_Controls[ACTION_COUNT] =
 {
 	{ "Show/Hide controls", GLFW_KEY_F1 },
 	{ "Restart the current map", GLFW_KEY_F5 },
 	{ "Generate a new map", GLFW_KEY_F6 },
+	{ "Change map filter", GLFW_KEY_F7 },    
 
 	{ "Rotate counter-clockwise", GLFW_KEY_LEFT },
 	{ "Rotate clockwise", GLFW_KEY_RIGHT },
@@ -227,25 +246,25 @@ static string printControls(int iLine, bool Exclude)
 		Controls << "General:\n";
 	else
 		Controls << "\n";
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 4; i++)
 		print(i);
 	if (Exclude)
 		Controls << "\nGameplay:\n";
 	else
 		Controls << "\n\n";
-	for (int i = 3; i < 8; i++)
+	for (int i = 4; i < 9; i++)
 		print(i);
 	if (Exclude)
 		Controls << "\nTime:\n";
 	else
 		Controls << "\n\n";
-	for (int i = 8; i < 11; i++)
+	for (int i = 9; i < 12; i++)
 		print(i);
 	if (Exclude)
 		Controls << "\nView:\n";
 	else
 		Controls << "\n\n";
-	for (int i = 11; i < 17; i++)
+	for (int i = 12; i < 18; i++)
 		print(i);
 	return Controls.str();
 }
@@ -269,8 +288,8 @@ static int getHoveredControl()
 		iHoverLine = -1;
 	}
 	iHoverLine -= 1;
-	if (iHoverLine > 3)
-		iHoverLine -= 2;
+	if (iHoverLine > 4)
+		iHoverLine -= 3;
 	if (iHoverLine > 8)
 		iHoverLine -= 2;
 	if (iHoverLine > 11)
@@ -422,27 +441,22 @@ static void releaseWork(const MotoWork& Work)
 	cout << motoMessage(Work);
 }
 
+
 static void parseInput();
+static MotoWork getWorkForFun();
 
 static void goToNextWorld()
 {
 	if (g_State == STATE_REPLAYING || g_State == STATE_SUCCESS)
 		return;
 
-    if (g_HasNextWork)
-    {
-      releaseWork(g_Work);
-      g_Work = g_NextWork;
-      g_PlayingForFun = false;
-      g_HasNextWork = false;
-      g_PoW.Nonce=0;
-    }      
+    g_PoW.Nonce=0;
     
 	float LetterSize = 0.02f;
-	const char* pMsg = "Generating next world...";
+	const char* pMsg = "Generating next map with filter %s";
     char BUF[64];
 
-    sprintf(BUF, pMsg, g_PoW.Nonce);
+    sprintf(BUF, pMsg, FilterNames[g_Filter]);
     glClear(GL_COLOR_BUFFER_BIT);
     drawText(BUF, 0, 0, 1.5f*LetterSize, 1);
     glfwSwapBuffers(g_pWindow);
@@ -450,9 +464,21 @@ static void goToNextWorld()
 	// Find next good world (some worlds are ill-formed).
 	do {
         // If there is new work then switch to it.
-	    g_PoW.Nonce=rand();
-        //this_thread::sleep_for(milliseconds(1));
-        //parseInput();
+        if(g_State != STATE_REPLAYING) {
+          parseInput();
+          if (g_HasNextWork)
+          {
+            releaseWork(g_Work);
+            g_Work = g_NextWork;
+            g_PlayingForFun = false;
+            g_HasNextWork = false;
+            g_PoW.Nonce = 0;
+          }      
+        }
+        if(g_PlayingForFun)
+          g_Work = getWorkForFun();
+      
+	    g_PoW.Nonce++;
     }
 	while (!motoGenerateGoodWorld(&g_World, &g_FirstFrame, g_Work.Block, &g_PoW));
 		
@@ -636,12 +662,12 @@ static void play()
 static MotoWork getWorkForFun()
 {
 	MotoWork Work;
-	srand((unsigned int)system_clock::now().time_since_epoch().count());
+	srand(time(NULL));
 	for (int i = 0; i < MOTO_WORK_SIZE; i++)
 		Work.Block[i] = rand() % 256;
-    Work.Block[MOTO_WORK_SIZE-1] = 0x00; //0x20;
-    Work.Block[MOTO_WORK_SIZE-2] = 0x00; //0x70;
-    Work.Block[MOTO_WORK_SIZE-3] = 0x0a; // | (3 << 6);
+    Work.Block[MOTO_WORK_SIZE-1] = 0x20; //min difficulty
+    Work.Block[MOTO_WORK_SIZE-2] = 0x7F;
+    Work.Block[MOTO_WORK_SIZE-3] = 0xC0 | (3 << 6);
     Work.Block[MOTO_WORK_SIZE-4] = 0xF1;
 	Work.IsNew = false;
 	Work.TimeTarget = 250*60;
@@ -735,9 +761,24 @@ static void onKeyPress(GLFWwindow* pWindow, int Key, int Scancode, int Action, i
 		restart();
 		break;
 
-	case ACTION_NEXT_LEVEL:
+    case ACTION_MAP_FILTER:
+      switch(g_Filter) {
+        case FILTER_NONE:
+          g_Filter = FILTER_BASIC;
+          break;
+        case FILTER_BASIC:
+          g_Filter = FILTER_DOUBLE;
+          break;
+        case FILTER_DOUBLE:
+          g_Filter = FILTER_NONE;
+          break;
+      }
+
+    case ACTION_NEXT_LEVEL:
 		goToNextWorld();
 		break;
+    
+      break;
 
 	case ACTION_SWITCH_VIEW:
 		g_OverallView = !g_OverallView;
@@ -803,7 +844,7 @@ static void GLFW_ErrorCallback(int iError, const char* pString)
 
 int main(int argc, char** argv)
 {
-	srand((unsigned int)system_clock::now().time_since_epoch().count());
+	srand(time(NULL));
 	bool NoFun = false;
 	bool Fullscreen = false;
 	for (int i = 0; i < argc; i++)
@@ -868,7 +909,7 @@ int main(int argc, char** argv)
 	motoInitPoW(&g_PoW);
 
 	// Let's start to play.
-	g_Work = getWorkForFun();
+    g_Work = getWorkForFun();
 	goToNextWorld();
 	
 	g_State = STATE_PLAYING;

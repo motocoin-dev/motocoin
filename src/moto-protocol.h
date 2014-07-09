@@ -16,9 +16,11 @@
 #include "moto-engine.h"
 
 std::string motoMessage(const MotoWork& Work);
+std::string motoMessage(const MotoGetWork& Work);
 std::string motoMessage(const MotoWork& Work, const MotoPoW& PoW);
 
 bool motoParseMessage(const char* pMsg, MotoWork& Work);
+bool motoParseMessage(const char* pMsg, MotoGetWork& Work);
 bool motoParseMessage(const char* pMsg, MotoWork& Work,  MotoPoW& PoW);
 
 #endif // MOTOCOIN_MOTOPROTOCOL_H

@@ -16,6 +16,7 @@
 using namespace std;
 
 static const char* g_pMsgWork = "***Work:";
+static const char* g_pMsgGetWork = "***GetWork:";
 static const char* g_pMsgWorkAndPoW = "***WPoW:";
 
 template<typename T>
@@ -87,6 +88,25 @@ bool motoParseMessage(const char* pMsg, MotoWork& Work)
 
 	pMsg += strlen(g_pMsgWork);
 	return readObject(pMsg, Work);
+}
+
+bool motoParseMessage(const char* pMsg, MotoGetWork& Work)
+{
+  if (strncmp(pMsg, g_pMsgGetWork, strlen(g_pMsgGetWork)) != 0)
+    return false;
+  
+  pMsg += strlen(g_pMsgGetWork);
+  MotoGetWork gw;
+  if(readObject(pMsg, gw)) {
+    for(int i=0;i<80;i+=4) {
+      Work.Block[i] = gw.Block[i+3];
+      Work.Block[i+1] = gw.Block[i+2];
+      Work.Block[i+2] = gw.Block[i+1];
+      Work.Block[i+3] = gw.Block[i];
+    }
+    return true;
+  }
+  return false;
 }
 
 bool motoParseMessage(const char* pMsg, MotoWork& Work, MotoPoW& PoW)

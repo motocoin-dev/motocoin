@@ -44,9 +44,9 @@ Entire range is [-8192; 8192].
 /* Start and finish positions (in integer coordinates). */
 #ifdef TESTMODE
 static const int32_t g_MotoStart[2]  = {          0, -300000000 }; /**< Position of start  in world map (in integer coordinates). */
-static const int32_t g_MotoFinish[2] = {          0, -900000000 }; /**< Position of finish in world map (in integer coordinates). */
-static const int64_t g_MotoStartL[2]  = {          0, -300000000+((int64_t)1<<32) }; /**< Position of start  in world map (in integer coordinates). */
-static const int64_t g_MotoFinishL[2] = {          0, -900000000 }; /**< Position of finish in world map (in integer coordinates). */
+static const int32_t g_MotoFinish[2] = {          0, -4000000000 }; /**< Position of finish in world map (in integer coordinates). */
+static const int64_t g_MotoStartL[2]  = {          0, -300000000+((long)1<<32) }; /**< Position of start  in world map (in integer coordinates). */
+static const int64_t g_MotoFinishL[2] = {          0, -4000000000 }; /**< Position of finish in world map (in integer coordinates). */
 #else
 static const int32_t g_MotoStart[2]  = {          0, -300000000 }; /**< Position of start  in world map (in integer coordinates). */
 static const int32_t g_MotoFinish[2] = { 2140000000,  400000000 }; /**< Position of finish in world map (in integer coordinates). */
@@ -168,6 +168,19 @@ typedef struct
 	uint8_t  Block[MOTO_WORK_SIZE];
 } MotoWork;
 
+typedef struct
+{
+  uint8_t  Block[80]; //full normal header less sha padding
+} MotoGetWork;
+
+#ifdef NO_OPENSSL_SHA
+  extern void *SHA512(uint8_t *buffer, size_t len, void *resblock);
+#else
+  #include <openssl/sha.h>
+#endif
+
+void initTables();
+
 /** Initialize proof-of-work to zero. */
 void motoInitPoW(MotoPoW* pPoW);
 
@@ -193,6 +206,7 @@ bool motoCheck(const uint8_t* pBlock, MotoPoW* pPoW);
 */
 bool motoGenerateWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t* pBlock, uint32_t Nonce);
 bool motoGenerateGoodWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t* pBlock, MotoPoW* pow);
+bool motoGenerateGoodWorldRound(MotoWorld* pWorld, MotoState* pState, const uint8_t* pBlock, MotoPoW* pow);
 /** \brief Evaluate several game frames.
 *
 * @param pState (in/out) - Game state that will be modified.
