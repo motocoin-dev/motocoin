@@ -75,7 +75,7 @@ static enum
 	STATE_SUCCESS
 } g_State;
 
-static char* FilterNames[FILTER_COUNT] = {
+static const char* FilterNames[FILTER_COUNT] = {
   "'None'",
   "'Minim1ner basic'",
   "'Minim1ner mix'"
