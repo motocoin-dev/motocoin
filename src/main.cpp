@@ -1192,7 +1192,7 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
         std::nth_element(Times, Times + Middle, Times + blockstogoback);
         int Median;
         Median = Times[Middle];
-        if(CurHeight >= 100000 || fTestNet) {
+        if(CurHeight >= 104000 || fTestNet) {
           if(blockstogoback % 2 == 0) {
             std::nth_element(Times, Times + (Middle - 1), Times + blockstogoback);
             Median = (Times[Middle-1] + Median) / 2;
@@ -1227,7 +1227,7 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
         printf("GetNextWorkRequired Before: %i\n", pindexLast->nBits & MOTO_TARGET_MASK);
         printf("GetNextWorkRequired After:  %i\n", bnNew);
         //calculate new block frequency relative to game frequency
-        if(CurHeight >= 100000 || fTestNet) {
+        if(CurHeight >= 104000 || fTestNet) {
           printf("GetNextWorkRequired Game Sum: %i\n", Sum);
           bnNew = bnNew & MOTO_TARGET_MASK;
           if(bnNew < nProofOfWorkLimit)
