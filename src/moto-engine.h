@@ -95,6 +95,17 @@ typedef enum
 	MOTO_ROTATE_CCW, /**< Player is currently rotating counter-clockwise. */
 } EMotoRot;
 
+enum Filter
+{
+	FILTER_NONE,
+	FILTER_BASIC,
+	FILTER_DOUBLE,
+
+	FILTER_COUNT
+};
+
+extern Filter g_Filter;
+
 /** \brief Pseudo-randomly generated world.
 *
 * Contains no state.

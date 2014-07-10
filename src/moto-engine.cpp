@@ -543,16 +543,7 @@ bool payWork(uint8_t* BlockPlusNonce, uint32_t work, int nonce) {
   return false;
 }
 
-enum Filter
-{
-  FILTER_NONE,
-  FILTER_BASIC,
-  FILTER_DOUBLE,
-  
-  FILTER_COUNT
-};
-Filter g_Filter=FILTER_DOUBLE;
-
+Filter g_Filter = FILTER_DOUBLE;
 
 bool motoGenerateRandomWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t* pWork, MotoPoW* pow)
 {
@@ -566,8 +557,8 @@ bool motoGenerateRandomWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t
   
   int offset = -300;
 
-  uint nBits = (pWork[MOTO_WORK_SIZE-1] << 24) | (pWork[MOTO_WORK_SIZE-2] << 16) | (pWork[MOTO_WORK_SIZE-3] << 8) | (pWork[MOTO_WORK_SIZE-4]);
-  uint work = nBits & ~MOTO_TARGET_MASK;
+  uint32_t nBits = (pWork[MOTO_WORK_SIZE-1] << 24) | (pWork[MOTO_WORK_SIZE-2] << 16) | (pWork[MOTO_WORK_SIZE-3] << 8) | (pWork[MOTO_WORK_SIZE-4]);
+  uint32_t work = nBits & ~MOTO_TARGET_MASK;
   uint32_t snonce = pow->Nonce;
   while(t!=true){
     n++;
@@ -599,8 +590,8 @@ bool motoGenerateRandomWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t
     }
     
     for(i=0;i<=max_t;i++){
-      P[0]=(g_MotoFinishL[0]/max_t*(max_t-i)+g_MotoStartL[0]/max_t*(i));
-      P[1]=((g_MotoFinishL[1])/max_t*(max_t-i)+g_MotoStartL[1]/max_t*(i));
+      P[0]=int32_t(g_MotoFinishL[0]/max_t*(max_t-i)+g_MotoStartL[0]/max_t*(i));
+      P[1]=int32_t((g_MotoFinishL[1])/max_t*(max_t-i)+g_MotoStartL[1]/max_t*(i));
       if(getF(pWorld,P)<-offset){
         score++;
       }
@@ -708,8 +699,8 @@ uint8_t BlockPlusNonce[MOTO_WORK_SIZE + 1 + sizeof(uint32_t)];
 memcpy(BlockPlusNonce + 1, &Nonce, sizeof(uint32_t));
 memcpy(BlockPlusNonce + 1 + sizeof(uint32_t), pWork, MOTO_WORK_SIZE);
 
-  uint nBits = (pWork[MOTO_WORK_SIZE-1] << 24) | (pWork[MOTO_WORK_SIZE-2] << 16) | (pWork[MOTO_WORK_SIZE-3] << 8) | (pWork[MOTO_WORK_SIZE-4]);
-  uint work = nBits & ~MOTO_TARGET_MASK;
+  uint32_t nBits = (pWork[MOTO_WORK_SIZE-1] << 24) | (pWork[MOTO_WORK_SIZE-2] << 16) | (pWork[MOTO_WORK_SIZE-3] << 8) | (pWork[MOTO_WORK_SIZE-4]);
+  uint32_t work = nBits & ~MOTO_TARGET_MASK;
   
   if(!payWork(BlockPlusNonce, work, Nonce)) return false;
 

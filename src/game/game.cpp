@@ -75,15 +75,6 @@ static enum
 	STATE_SUCCESS
 } g_State;
 
-extern enum _g_Filter
-{
-  FILTER_NONE,
-  FILTER_BASIC,
-  FILTER_DOUBLE,
-  
-  FILTER_COUNT
-} g_Filter;
-
 static char* FilterNames[FILTER_COUNT] = {
   "'None'",
   "'Minim1ner basic'",
@@ -662,7 +653,7 @@ static void play()
 static MotoWork getWorkForFun()
 {
 	MotoWork Work;
-	srand(time(NULL));
+	srand((unsigned int)time(NULL));
 	for (int i = 0; i < MOTO_WORK_SIZE; i++)
 		Work.Block[i] = rand() % 256;
     Work.Block[MOTO_WORK_SIZE-1] = 0x20; //min difficulty
@@ -844,7 +835,7 @@ static void GLFW_ErrorCallback(int iError, const char* pString)
 
 int main(int argc, char** argv)
 {
-	srand(time(NULL));
+	srand((unsigned int)time(NULL));
 	bool NoFun = false;
 	bool Fullscreen = false;
 	for (int i = 0; i < argc; i++)
