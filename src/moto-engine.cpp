@@ -571,7 +571,7 @@ bool motoGenerateRandomWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t
   uint32_t snonce = pow->Nonce;
   while(t!=true){
     n++;
-    if(n%100000==0){DEBUG_MSG("n: "<<n);}
+    //if(n%100000==0){DEBUG_MSG("n: "<<n);}
     //DEBUG_MSG("n: " << n);
     if(pow->Nonce == snonce-1)
       return false;
@@ -642,12 +642,14 @@ bool motoGenerateRandomWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t
   bool goodFin = getGroundCollideDist65536(g_MotoFinish, pWorld) > g_65536WheelR ;
   bool goodStart = advanceOneFrame(&TestFrame, MOTO_IDLE, MOTO_NO_ROTATION, pWorld) == MOTO_CONTINUE;
   bool res = goodFin&&goodStart ;
+  /*
   if(!goodFin){
     DEBUG_MSG("ill formed fin");
   }
   if(!goodStart){
     DEBUG_MSG("ill formed start");
   }
+  */
   return res;
 }
 
@@ -689,7 +691,11 @@ bool motoGenerateGoodWorldRound(MotoWorld* pWorld, MotoState* pState, const uint
 bool motoGenerateGoodWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t* pWork, MotoPoW* pow){
   switch(g_Filter) {
     case FILTER_NONE:
-      return motoGenerateWorld(pWorld, pState, pWork, pow->Nonce);
+      if(motoGenerateWorld(pWorld, pState, pWork, pow->Nonce)) {
+		  MotoState TestFrame = *pState;
+		  return getGroundCollideDist65536(g_MotoFinish, pWorld) > g_65536WheelR && advanceOneFrame(&TestFrame, MOTO_IDLE, MOTO_NO_ROTATION, pWorld) == MOTO_CONTINUE;
+	  }
+	  break;
     case FILTER_BASIC:
       return motoGenerateRandomWorld(pWorld, pState, pWork, pow);
     case FILTER_DOUBLE:
@@ -742,8 +748,7 @@ pState->HeadPos[0] = pState->Bike.Pos[0];
 pState->HeadPos[1] = pState->Bike.Pos[1] + g_HeadPos;
 
 /* Check that finish is not inside of rock and also test one frame to see if something is wrong. */
-MotoState TestFrame = *pState;
-return getGroundCollideDist65536(g_MotoFinish, pWorld) > g_65536WheelR && advanceOneFrame(&TestFrame, MOTO_IDLE, MOTO_NO_ROTATION, pWorld) == MOTO_CONTINUE;
+return true;
 }
 
 bool motoCheck(const uint8_t* pWork, MotoPoW* pPoW)
@@ -802,7 +807,6 @@ bool motoReplay(MotoState* pState, const MotoPoW* pPoW, const MotoWorld* pWorld,
 		Accel = (EMotoAccel)(pPoW->Updates[i] % 4);
 		Rotation = (EMotoRot)((pPoW->Updates[i] / 4) % 3);
 	}
-
 	return false;
 }
 
