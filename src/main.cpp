@@ -1323,6 +1323,7 @@ void static InvalidBlockFound(CBlockIndex *pindex) {
     pindex->nStatus |= BLOCK_FAILED_VALID;
     pblocktree->WriteBlockIndex(CDiskBlockIndex(pindex));
     setBlockIndexValid.erase(pindex);
+	printf("INVALID BLOCK\n");
     InvalidChainFound(pindex);
     if (pindex->pnext) {
         CValidationState stateDummy;
@@ -1357,6 +1358,7 @@ bool ConnectBestBlock(CValidationState &state) {
                     pblocktree->WriteBlockIndex(CDiskBlockIndex(pindexFailed));
                     pindexFailed = pindexFailed->pprev;
                 }
+                printf("INVALID ANCESTRY\n");
                 InvalidChainFound(pindexNewBest);
                 break;
             }
@@ -1571,7 +1573,15 @@ bool CBlock::CheckPoW()
 {
     if (GetHash() == hashGenesisBlock)
         return true;
-    return Nonce.NumFrames < (nBits & MOTO_TARGET_MASK) && motoCheck((const uint8_t*)&nVersion, &Nonce);
+	if(Nonce.NumFrames > (nBits & MOTO_TARGET_MASK)) {
+		printf("Bad frame count!\n");
+		return false;
+	}
+	if(!motoCheck((const uint8_t*)&nVersion, &Nonce)) {
+		printf("Bad Check!\n");
+		return false;
+	}
+    return true;
 }
 
 
@@ -1910,6 +1920,7 @@ bool SetBestChain(CValidationState &state, CBlockIndex* pindexNew)
         int64 nStart = GetTimeMicros();
         if (!block.ConnectBlock(state, pindex, view)) {
             if (state.IsInvalid()) {
+				printf("SETBESTINVALID");
                 InvalidChainFound(pindexNew);
                 InvalidBlockFound(pindex);
             }
