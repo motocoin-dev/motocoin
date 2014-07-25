@@ -1,0 +1,9 @@
+Constant generator for the game.
+
+1. Compile:
+
+    g++ -std=c++11 -o constgen constgen.cpp
+
+2. Execute:
+
+   ./constgen > moto-engine-const.h
