@@ -273,6 +273,7 @@ struct neighbor_xy_list *findPath(struct grid *gd, int startX, int startY, int e
 		}
 	}
 	printf("\n----------\nReturning NULL because head = current\n----------\n");
+	ol_clean(head);
 	return NULL;
 }
 
