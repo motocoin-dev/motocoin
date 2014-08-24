@@ -25,6 +25,7 @@ UI_DIR = build
 
 QMAKE_CXXFLAGS *= -std=gnu++0x
 
+
 # use: qmake "RELEASE=1"
 contains(RELEASE, 1) {
     # Mac: compile for maximum compatibility (10.5, 32-bit)
@@ -303,7 +304,12 @@ SOURCES += src/qt/bitcoin.cpp \
     src/bttrackers.cpp \
     src/moto-protocol.cpp \
     src/moto-engine.cpp \
-    src/qt/gamehelpdialog.cpp
+    src/qt/gamehelpdialog.cpp \
+    src/cJumpPointSearch/src/display.cpp \
+    src/cJumpPointSearch/src/heap.cpp \
+    src/cJumpPointSearch/src/neighbors.cpp \
+    src/cJumpPointSearch/src/path.cpp \
+    src/cJumpPointSearch/src/jps_grid.cpp \
 
 RESOURCES += src/qt/bitcoin.qrc
 

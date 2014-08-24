@@ -1,7 +1,7 @@
 
 CPP = g++
 CXXFLAGS = -O2 -s -std=c++0x -fopenmp 
-SOURCES = sha512.cpp ../moto-engine.cpp ../moto-protocol.cpp game.cpp graphics.cpp render.cpp
+SOURCES = ../cJumpPointSearch/src/*.cpp sha512.cpp ../moto-engine.cpp ../moto-protocol.cpp game.cpp graphics.cpp render.cpp
 LIBS = -lGL -lGLEW -lglfw3 -lX11 -lXxf86vm -lXrandr -lXi -lpthread
 INCLUDES = -I../
 LDFLAGS = 

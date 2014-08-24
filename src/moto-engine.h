@@ -175,6 +175,7 @@ typedef struct
 {
 	uint16_t IsNew; /**< All previous blocks are now useless. */
 	int16_t  TimeTarget;
+	int32_t height;
 	char     Msg[128]; /**< Message for user. Showed at lower left corner of the screen. */
 	uint8_t  Block[MOTO_WORK_SIZE];
 } MotoWork;
@@ -216,7 +217,7 @@ bool motoCheck(const uint8_t* pBlock, MotoPoW* pPoW);
 * @return true if generated world is well-formed and false otherwise. Ill-formed world is one that seems impossible to complete but not necessarily so.
 */
 bool motoGenerateWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t* pBlock, uint32_t Nonce);
-bool motoGenerateGoodWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t* pBlock, MotoPoW* pow);
+bool motoGenerateGoodWorld(MotoWorld* pWorld, MotoState* pState, const MotoWork* pBlock, MotoPoW* pow);
 bool motoGenerateGoodWorldRound(MotoWorld* pWorld, MotoState* pState, const uint8_t* pBlock, MotoPoW* pow);
 /** \brief Evaluate several game frames.
 *
@@ -231,7 +232,7 @@ bool motoGenerateGoodWorldRound(MotoWorld* pWorld, MotoState* pState, const uint
 */
 EMotoResult motoAdvance(MotoState* pState, MotoPoW* pPoW, const MotoWorld* pWorld, EMotoAccel Accel, EMotoRot Rotation, int16_t NumFrames);
 
-bool motoReplay(MotoState* pState, const MotoPoW* pPoW, const MotoWorld* pWorld, int16_t iToFrame);
+bool motoReplay(MotoState* pState, MotoPoW* pPoW, const MotoWorld* pWorld, int16_t iToFrame);
 
 void motoF(float Fdxdy[3], float x, float y, const MotoWorld* pWorld);
 

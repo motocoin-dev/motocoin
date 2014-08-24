@@ -13,7 +13,9 @@
     #include <unistd.h>
 #endif
 
+#ifndef HEADLESS
 #include <GLFW/glfw3.h>
+#endif
 
 #include <cstdio>
 #include <cstdlib>
@@ -32,10 +34,14 @@ using namespace std;
 using namespace chrono;
 
 #include "../moto-engine.h"
+#include "../moto-engine-const.h"
 #include "../moto-protocol.h"
 #include "vec2.hpp"
+#ifndef HEADLESS
 #include "graphics.hpp"
 #include "render.hpp"
+#endif
+#include <unistd.h>
 
 static thread g_InputThread;
 static vector<string> g_InputLines;
@@ -51,6 +57,7 @@ static bool g_OverallView = false;
 static int g_WaitControl = -1;
 static double g_Speed = 1.0;
 static const float g_ControlsLetterSize = 0.018f;
+
 
 // Sky shift.
 static int32_t g_PrevIntPosition[2]; // used in sky shifting calculation
@@ -76,9 +83,9 @@ static enum
 } g_State;
 
 static const char* FilterNames[FILTER_COUNT] = {
-  "'None'",
-  "'Minim1ner basic'",
-  "'Minim1ner mix'"
+	"'None'",
+	"'Minim1ner basic'",
+	"'Minim1ner mix'"
 };
 
 static bool g_MotoDir = false;
@@ -87,7 +94,9 @@ static double g_PrevTime;
 static double g_PlayTime;
 static double g_ProgramStartTime;
 
-static GLFWwindow* g_pWindow;
+#ifndef HEADLESS
+GLFWwindow* g_pWindow;
+#endif
 
 enum EAction
 {
@@ -112,6 +121,8 @@ enum EAction
 
 	ACTION_COUNT
 };
+
+#ifndef HEADLESS
 
 string getKeyName(int Key)
 {
@@ -327,10 +338,12 @@ static CView getOverallView()
 	vec2 WorldPos[2] = { vec2(-0.5f, 0.0f)*WorldSize, vec2(0.5f, 1.0f)*WorldSize };
 	return CView(ScreenPos, WorldPos);
 }
+#endif
 
 // Called each frame.
 static void draw()
 {
+	#ifndef HEADLESS
 	//glClear(GL_COLOR_BUFFER_BIT);
 
 	// Shift sky.
@@ -405,6 +418,7 @@ static void draw()
 	}
 
 	drawText(g_Work.Msg, -1, 1, LetterSize);
+#endif
 }
 
 // Restart current world.
@@ -441,39 +455,41 @@ static void goToNextWorld()
 	if (g_State == STATE_REPLAYING || g_State == STATE_SUCCESS)
 		return;
 
-    g_PoW.Nonce=0;
+	g_PoW.Nonce=0;
     
+	#ifndef HEADLESS
 	float LetterSize = 0.02f;
 	const char* pMsg = "Generating next map with filter %s";
-    char BUF[64];
+	char BUF[64];
 
-    sprintf(BUF, pMsg, FilterNames[g_Filter]);
-    glClear(GL_COLOR_BUFFER_BIT);
-    drawText(BUF, 0, 0, 1.5f*LetterSize, 1);
-    glfwSwapBuffers(g_pWindow);
-    
+	sprintf(BUF, pMsg, FilterNames[g_Filter]);
+	glClear(GL_COLOR_BUFFER_BIT);
+	drawText(BUF, 0, 0, 1.5f*LetterSize, 1);
+	glfwSwapBuffers(g_pWindow);
+	#endif
 	// Find next good world (some worlds are ill-formed).
 	do {
-        // If there is new work then switch to it.
-        if(g_State != STATE_REPLAYING) {
-          parseInput();
-          if (g_HasNextWork)
-          {
-            releaseWork(g_Work);
-            g_Work = g_NextWork;
-            g_PlayingForFun = false;
-            g_HasNextWork = false;
-            g_PoW.Nonce = 0;
-          }      
-        }
-        if(g_PlayingForFun)
-          g_Work = getWorkForFun();
+		// If there is new work then switch to it.
+		if(g_State != STATE_REPLAYING) {
+			parseInput();
+			if (g_HasNextWork)
+			{
+				releaseWork(g_Work);
+				g_Work = g_NextWork;
+				g_PlayingForFun = false;
+				g_HasNextWork = false;
+				g_PoW.Nonce = 0;
+			}      
+		}
+		if(g_PlayingForFun)
+			g_Work = getWorkForFun();
       
-	    g_PoW.Nonce++;
-    }
-	while (!motoGenerateGoodWorld(&g_World, &g_FirstFrame, g_Work.Block, &g_PoW));
-		
+		g_PoW.Nonce++;
+	}
+	while (!motoGenerateGoodWorld(&g_World, &g_FirstFrame, &g_Work, &g_PoW));
+#ifndef HEADLESS
 	prepareWorldRendering(g_World);
+#endif
 	restart();
 }
 
@@ -523,7 +539,9 @@ static void parseInput()
 			g_Work = Work;
 			g_PoW = PoW;
 			motoGenerateWorld(&g_World, &g_FirstFrame, g_Work.Block, g_PoW.Nonce);
+#ifndef HEADLESS
 			prepareWorldRendering(g_World);
+#endif
 			restart();
 		}
 	}
@@ -537,14 +555,17 @@ static bool processSolution()
 	if (!Result)
 	{
 		cout << "Error: Rechecking solution failed!" << endl;
+		cerr << "Error: Rechecking solution failed!" << endl;
 		return false;
 	}
 
 	// Print solution, it will be parsed by Motocoin-Qt.
-	cout << motoMessage(g_Work, g_PoW);
+	cout << "\n\n" << motoMessage(g_Work, g_PoW) << "\n\n" << endl;
+	cerr << "\n\n" << motoMessage(g_Work, g_PoW) << "\n\n" << endl;
 	return true;
 }
 
+#ifndef HEADLESS
 static bool isPressed(EAction Action)
 {
 	int Key = g_Controls[Action].Key;
@@ -594,6 +615,7 @@ static void playWithInput(int NextFrame)
 	if (g_State != STATE_SUCCESS && g_Frame.iFrame >= g_Work.TimeTarget)
 		g_Frame.Dead = true;
 }
+#endif
 
 // Called each frame.
 static void play()
@@ -611,6 +633,7 @@ static void play()
 	
 	double TimeDelta = Time - g_PrevTime;
 	g_PrevTime = Time;
+#ifndef HEADLESS
 	if (isPressed(ACTION_REWIND) == GLFW_PRESS)
 		TimeDelta = -TimeDelta;
 	if ((g_Frame.Dead && TimeDelta > 0) || g_State == STATE_SUCCESS)
@@ -646,6 +669,7 @@ static void play()
 		if (g_Frame.Accel == MOTO_GAS_RIGHT)
 			g_MotoDir = false;
 	}
+	#endif
 	else if (g_State == STATE_PLAYING)
 		playWithInput(NextFrame);
 }
@@ -653,21 +677,23 @@ static void play()
 static MotoWork getWorkForFun()
 {
 	MotoWork Work;
-	srand((unsigned int)time(NULL));
 	for (int i = 0; i < MOTO_WORK_SIZE; i++)
 		Work.Block[i] = rand() % 256;
-    Work.Block[MOTO_WORK_SIZE-1] = 0x20; //min difficulty
-    Work.Block[MOTO_WORK_SIZE-2] = 0x7F;
-    Work.Block[MOTO_WORK_SIZE-3] = 0xC0 | (3 << 6);
-    Work.Block[MOTO_WORK_SIZE-4] = 0xF1;
+	Work.Block[MOTO_WORK_SIZE-1] = 0x00; // 0x20; //min difficulty
+	Work.Block[MOTO_WORK_SIZE-2] = 0x00; // 0x7F;
+	Work.Block[MOTO_WORK_SIZE-3] = 0x00; // | (3 << 6);  //0xC0
+	Work.Block[MOTO_WORK_SIZE-4] = 0x00;
 	Work.IsNew = false;
 	Work.TimeTarget = 250*60;
+	//motoInitPoW(&g_PoW);
+	g_PoW.NumFrames = Work.TimeTarget-1;
 	//sprintf(Work.Msg, "Block %i, Reward %f MTC, Target %.3f", Work.BlockHeight, 5000000000/100000000.0, Work.TimeTarget/250.0);
 	strncpy(Work.Msg, "No work available, you may play just for fun.", sizeof(Work.Msg));
 
 	return Work;
 }
 
+#ifndef HEADLESS
 static void onWindowResize(GLFWwindow *pWindow, int Width, int Height)
 {
 	glViewport(0, 0, Width, Height);
@@ -752,25 +778,23 @@ static void onKeyPress(GLFWwindow* pWindow, int Key, int Scancode, int Action, i
 		restart();
 		break;
 
-    case ACTION_MAP_FILTER:
-      switch(g_Filter) {
-        case FILTER_NONE:
-          g_Filter = FILTER_BASIC;
-          break;
-        case FILTER_BASIC:
-          g_Filter = FILTER_DOUBLE;
-          break;
-        case FILTER_DOUBLE:
-          g_Filter = FILTER_NONE;
-          break;
-      }
+	case ACTION_MAP_FILTER:
+	switch(g_Filter) {
+		case FILTER_NONE:
+		g_Filter = FILTER_BASIC;
+		break;
+		case FILTER_BASIC:
+		g_Filter = FILTER_DOUBLE;
+		break;
+		case FILTER_DOUBLE:
+		g_Filter = FILTER_NONE;
+		break;
+	}
 
-    case ACTION_NEXT_LEVEL:
+	case ACTION_NEXT_LEVEL:
 		goToNextWorld();
 		break;
     
-      break;
-
 	case ACTION_SWITCH_VIEW:
 		g_OverallView = !g_OverallView;
 		break;
@@ -816,6 +840,7 @@ static void onMouseButtonPress(GLFWwindow *pWindow, int Button, int Action, int 
 		g_WaitControl = iControl;
 	}
 }
+#endif
 
 void showError(const string& Error)
 {
@@ -842,6 +867,7 @@ int main(int argc, char** argv)
 	{
 		if (strcmp(argv[i], "-nofun") == 0)
 			NoFun = true;
+#ifndef HEADLESS
 		if (strcmp(argv[i], "-schematic") == 0)
 			g_SchematicMainView = true;
 		if (strcmp(argv[i], "-fullscreen") == 0)
@@ -851,8 +877,10 @@ int main(int argc, char** argv)
 			i++;
 			loadConfig(argv[i]);
 		}
+#endif
 	}
 	
+#ifndef HEADLESS
 	// Initialize GLFW library 
 	glfwSetErrorCallback(GLFW_ErrorCallback);
 	if (!glfwInit())
@@ -894,7 +922,8 @@ int main(int argc, char** argv)
 
 	// Initialize our world rendering stuff.
 	initRenderer();
-
+#endif
+	
 	g_ProgramStartTime = glfwGetTime();
 
 	motoInitPoW(&g_PoW);
@@ -913,7 +942,11 @@ int main(int argc, char** argv)
 	int PrevTime = int(glfwGetTime()*1000);
 
 	// Loop until the user closes the window.
+#ifdef HEADLESS
+	while(true)
+#else
 	while (!glfwWindowShouldClose(g_pWindow))
+#endif
 	{
 		parseInput();
 
@@ -929,8 +962,10 @@ int main(int argc, char** argv)
 			draw();
 		}
 
+#ifndef HEADLESS
 		glfwSwapBuffers(g_pWindow);
 		glfwPollEvents();
+#endif
 
 		// 1. glfwSwapInterval doesn't work on Windows.
 		// 2. It may also not work on other platforms for some reasons (e.g. GPU settings).
@@ -948,11 +983,11 @@ int main(int argc, char** argv)
 			this_thread::sleep_for(milliseconds(TimeToWait));
 		PrevTime = int(glfwGetTime()*1000);
 	}
-
+#ifndef HEADLESS
 	glfwTerminate();
 
 	printConfig();
-
+#endif
 	// g_InputThread is still running and there is no way to terminate it.
 #ifdef _WIN32
 	TerminateProcess(GetCurrentProcess(), 0);

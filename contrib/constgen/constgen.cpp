@@ -62,6 +62,22 @@ int main()
 	cout << "#define g_2WheelR_div_PosK " << (int32_t)(2*MOTO_WHEEL_R/g_MotoPosK) << "\n";
 	cout << "#define g_Head_plus_WheelR_div_PosK " << (int32_t)((0.238f + MOTO_WHEEL_R)/g_MotoPosK) << "\n";
 
+	cout << "\nstatic const int32_t g_TTworkcurve[250*60+1]  = {";
+	
+	for (int i = 0; i <= (250*60); i++)
+	{
+		int64_t work_a = 9950;
+		int64_t work_k = 939600000;
+		int64_t work_b = 14560;
+		if (i % 250 == 0)
+			cout << "\n";
+		cout << (int32_t)(work_k/(1+exp((log(81)/-work_a)*(i-work_b))));
+		if (i != (250*60))
+			cout << ", ";
+	}
+	cout << "};\n";
+	
+	
 	cout << "\nstatic const int32_t g_sin[16385]  = {";
 
 	for (int i = 0; i <= 16384; i++)

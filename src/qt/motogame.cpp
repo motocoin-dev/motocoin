@@ -149,6 +149,7 @@ void Motogame::updateBlock()
     MotoWork Work;
     Work.IsNew = IsNew;
     Work.TimeTarget = pBlock->nBits & MOTO_TARGET_MASK;
+    Work.height = pindexBest->nHeight + 1;
     snprintf(Work.Msg, sizeof(Work.Msg), "Block %i, Reward %f MOTO, Target %.3f.", pindexBest->nHeight + 1, pBlock->vtx[0].vout[0].nValue/100000000.0, Work.TimeTarget/250.0);
     memcpy(Work.Block, &pBlock->nVersion, sizeof(Work.Block));
 

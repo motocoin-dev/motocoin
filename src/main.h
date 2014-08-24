@@ -11,6 +11,7 @@
 #include "net.h"
 #include "script.h"
 #include "moto-engine.h"
+#include "moto-engine-const.h"
 
 #include <list>
 
@@ -1755,7 +1756,9 @@ public:
     // Motocoin-FIXME: ok?
     CBigNum GetBlockWork() const
     {
-        return (CBigNum(1)<<250) / (nBits+1);
+        //return (CBigNum(1)<<250) / (nBits+1);
+        int bitsmasked = nBits & MOTO_TARGET_MASK;
+        return g_TTworkcurve[(250*60)-bitsmasked];
     }
 
     bool IsInMainChain() const
