@@ -571,8 +571,6 @@ int getPathLen(MotoWorld* pWorld) {
 	bool **matrix;
 	struct grid newgrid;
 	struct neighbor_xy_list *path_head = NULL, *path_head2 = NULL;
-	clock_t c0, c1;
-	double runtime_diff_ms;
 	matrix = (bool **) malloc(height * sizeof(bool *));
 	malloc_count++; /* [ Malloc Count ] */
 	for (i = 0; i < height; i++)
@@ -625,11 +623,11 @@ int getPathLen(MotoWorld* pWorld) {
 
 	//displayGrid(&newgrid);
 
-	c0 = clock();
 	int score1, score2, score;
 
 	path_head = findPath(&newgrid, startX, startY, endX, endY, &score1);
-	path_head2 = findPath(&newgrid, startX, startY, endX, endY, &score2);
+	newgrid.ex = endX2;
+	path_head2 = findPath(&newgrid, startX, startY, endX2, endY, &score2);
 	score = score1;
 	if(score1 > -1)
 	{
@@ -647,12 +645,7 @@ int getPathLen(MotoWorld* pWorld) {
 	//	displaySolution(&newgrid, path_head2);
 	//}
 
-	c1 = clock();
-	runtime_diff_ms = (c1 - c0) * 1000. / CLOCKS_PER_SEC;
-
-
 	//printf("\nPath Score %d\n", score);
-	//printf("\nPath calculation took %.0fms\n", runtime_diff_ms);
 
 	neighbor_xy_clean(path_head);
 	neighbor_xy_clean(path_head2);
@@ -797,7 +790,7 @@ bool motoGenerateGoodWorldRound(MotoWorld* pWorld, MotoState* pState, const uint
 	
 	}
 	pow->Nonce = bestWorld;
-	return motoGenerateWorld(pWorld, pState, pWork, pow->Nonce);
+		return motoGenerateWorld(pWorld, pState, pWork, pow->Nonce);
 }
 
 bool motoGenerateGoodWorld(MotoWorld* pWorld, MotoState* pState, const MotoWork* pWork, MotoPoW* pow){
