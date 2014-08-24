@@ -1758,7 +1758,7 @@ public:
     {
         //return (CBigNum(1)<<250) / (nBits+1);
         int bitsmasked = nBits & MOTO_TARGET_MASK;
-        return g_TTworkcurve[(250*60)-bitsmasked];
+        return g_TTworkcurve[(250*60)-bitsmasked] - (g_TTworkcurve[0]-1);
     }
 
     bool IsInMainChain() const
