@@ -809,24 +809,18 @@ bool motoGenerateGoodWorld(MotoWorld* pWorld, MotoState* pState, const MotoWork*
 			MotoState TestFrame = *pState;
 			if(!(getGroundCollideDist65536(g_MotoFinish, pWorld) > g_65536WheelR && advanceOneFrame(&TestFrame, MOTO_IDLE, MOTO_NO_ROTATION, pWorld) == MOTO_CONTINUE))
 				return false;
-			if(pWork->height > 177107 && getPathLen(pWorld) < 7300)
-				return false;
 			return true;
 		}
 		break;
 	case FILTER_BASIC:
 		if(motoGenerateRandomWorld(pWorld, pState, pWork->Block, pow))
 		{
-			if(pWork->height > 177107 && getPathLen(pWorld) < 7300)
-				return false;
 			return true;
 		}
 	break;
 	case FILTER_DOUBLE:
 		if(motoGenerateGoodWorldRound(pWorld, pState, pWork->Block, pow))
 		{
-			if(pWork->height > 177107 && getPathLen(pWorld) < 7300)
-				return false;
 				return true;
 		}
 		break;
@@ -860,6 +854,10 @@ bool motoGenerateWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t* pWor
 	{
 		pWorld->Map[i][0][0] = 0;
 		pWorld->Map[i][0][1] = 127;
+	}
+	if(BlockPlusNonce[5] > 2 && getPathLen(pWorld) < 7300)
+	{
+		return false;
 	}
 
 	memset(pState, 0, sizeof(MotoState));
