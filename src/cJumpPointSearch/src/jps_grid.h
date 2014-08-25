@@ -2,6 +2,7 @@
 #define __included_jps_grid_h
 
 #include <stdbool.h>
+#include <cstddef>
 
 extern int malloc_count;
 

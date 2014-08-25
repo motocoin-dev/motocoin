@@ -41,7 +41,9 @@ using namespace chrono;
 #include "graphics.hpp"
 #include "render.hpp"
 #endif
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 static thread g_InputThread;
 static vector<string> g_InputLines;
