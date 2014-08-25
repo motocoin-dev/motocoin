@@ -228,7 +228,12 @@ HEADERS += src/qt/bitcoingui.h \
     src/moto-protocol.h \
     src/moto-engine.h \
     src/moto-engine-const.h \
-    src/qt/gamehelpdialog.h
+    src/qt/gamehelpdialog.h \
+    src/cJumpPointSearch/src/display.h \
+    src/cJumpPointSearch/src/heap.h \
+    src/cJumpPointSearch/src/neighbors.h \
+    src/cJumpPointSearch/src/path.h \
+    src/cJumpPointSearch/src/jps_grid.h
 
 SOURCES += src/qt/bitcoin.cpp \
     src/qt/bitcoingui.cpp \

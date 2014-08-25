@@ -90,8 +90,12 @@ OBJS= \
     obj/txdb.o \
     obj/moto-engine.o \
     obj/moto-protocol.o \
-    obj/bttrackers.o
-
+    obj/bttrackers.o \
+    cJumpPointSearch/src/display.cpp \
+    cJumpPointSearch/src/heap.cpp \
+    cJumpPointSearch/src/neighbors.cpp \
+    cJumpPointSearch/src/path.cpp \
+    cJumpPointSearch/src/jps_grid.cpp
 all: motocoind.exe
 
 DEFS += -I"$(CURDIR)/leveldb/include"
