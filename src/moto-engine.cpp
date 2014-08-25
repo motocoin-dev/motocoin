@@ -566,8 +566,7 @@ int getPathLen(MotoWorld* pWorld) {
 	int i, width = size+2, height = size+2, startX = size/2, startY = 1,
 			endX = size-(size/126), endY = size-(size/10.667),
 			endX2 = (size/126);
-	char c;
-	int n, l, count;
+	int n, l;
 	bool **matrix;
 	struct grid newgrid;
 	struct neighbor_xy_list *path_head = NULL, *path_head2 = NULL;
