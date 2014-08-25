@@ -4,6 +4,10 @@
 #include <stdbool.h>
 #include <cstddef>
 
+#define min(a, b) (((a) < (b)) ? (a) : (b))
+#define max(a, b) (((a) > (b)) ? (a) : (b))
+
+
 extern int malloc_count;
 
 /* Contains all relevant information for a position in the grid */
