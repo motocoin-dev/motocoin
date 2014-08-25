@@ -19,6 +19,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\cJumpPointSearch\src\display.cpp" />
+    <ClCompile Include="..\..\cJumpPointSearch\src\heap.cpp" />
+    <ClCompile Include="..\..\cJumpPointSearch\src\jps_grid.cpp" />
+    <ClCompile Include="..\..\cJumpPointSearch\src\neighbors.cpp" />
+    <ClCompile Include="..\..\cJumpPointSearch\src\path.cpp" />
     <ClCompile Include="..\..\moto-engine.cpp" />
     <ClCompile Include="..\..\moto-protocol.cpp" />
     <ClCompile Include="..\game.cpp" />
@@ -27,6 +32,11 @@
     <ClCompile Include="..\sha512.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\cJumpPointSearch\src\display.h" />
+    <ClInclude Include="..\..\cJumpPointSearch\src\heap.h" />
+    <ClInclude Include="..\..\cJumpPointSearch\src\jps_grid.h" />
+    <ClInclude Include="..\..\cJumpPointSearch\src\neighbors.h" />
+    <ClInclude Include="..\..\cJumpPointSearch\src\path.h" />
     <ClInclude Include="..\..\moto-engine-const.h" />
     <ClInclude Include="..\..\moto-engine.h" />
     <ClInclude Include="..\..\moto-protocol.h" />
