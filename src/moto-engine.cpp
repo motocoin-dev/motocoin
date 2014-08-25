@@ -564,7 +564,7 @@ int malloc_count=0;
 int getPathLen(MotoWorld* pWorld) {
 	int size = 512;
 	int i, width = size+2, height = size+2, startX = size/2, startY = 1,
-			endX = size-(size/126), endY = size-(size/10.667),
+			endX = size-(size/126), endY = int(size-(size/10.667)),
 			endX2 = (size/126);
 	int n, l;
 	bool **matrix;
