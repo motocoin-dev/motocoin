@@ -590,8 +590,8 @@ int getPathLen(MotoWorld* pWorld) {
 		for(int64_t x=-2147483647;x<=2147483647;x+=(4294967296/size))
 		{
 			int32_t P[2];
-			P[0] = x;
-			P[1] = y;
+			P[0] = (int32_t)x;
+			P[1] = (int32_t)y;
 			int F = getF(pWorld, P);
 			//printf("%d %d = %d %d = %d\n", rx, ry, x, y, F);
 			matrix[ry][rx] = ( F < MOTO_LEVEL);
@@ -605,8 +605,8 @@ int getPathLen(MotoWorld* pWorld) {
 		for(int64_t x=-2147483647;x<2147483647;x+=(4294967296/size))
 		{
 			int32_t P[2];
-			P[0] = x;
-			P[1] = y;
+			P[0] = (int32_t)x;
+			P[1] = (int32_t)y;
 			int F = getF(pWorld, P);
 			//printf("%d %d = %d %d = %d\n", rx, ry, x, y, F);
 			matrix[ry][rx] = ( F < MOTO_LEVEL);
