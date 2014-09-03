@@ -217,8 +217,6 @@ bool motoCheck(const uint8_t* pBlock, MotoPoW* pPoW);
 * @return true if generated world is well-formed and false otherwise. Ill-formed world is one that seems impossible to complete but not necessarily so.
 */
 bool motoGenerateWorld(MotoWorld* pWorld, MotoState* pState, const uint8_t* pBlock, uint32_t Nonce);
-bool motoGenerateGoodWorld(MotoWorld* pWorld, MotoState* pState, const MotoWork* pBlock, MotoPoW* pow);
-bool motoGenerateGoodWorldRound(MotoWorld* pWorld, MotoState* pState, const uint8_t* pBlock, MotoPoW* pow);
 /** \brief Evaluate several game frames.
 *
 * @param pState (in/out) - Game state that will be modified.

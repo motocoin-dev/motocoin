@@ -268,11 +268,13 @@ struct neighbor_xy_list *findPath(struct grid *gd, int startX, int startY, int e
 		counter++;
 		if (counter >= 5000) {
 			ol_clean(head);
-			printf("\n----------\nLimit reached\n----------\n");
+			if(DEBUG)
+				printf("\n----------\nLimit reached\n----------\n");
 			return NULL;
 		}
 	}
-	printf("\n----------\nReturning NULL because head = current\n----------\n");
+	if(DEBUG)
+		printf("\n----------\nReturning NULL because head = current\n----------\n");
 	ol_clean(head);
 	return NULL;
 }

@@ -781,17 +781,18 @@ static void onKeyPress(GLFWwindow* pWindow, int Key, int Scancode, int Action, i
 		break;
 
 	case ACTION_MAP_FILTER:
-	switch(g_Filter) {
-		case FILTER_NONE:
-		g_Filter = FILTER_BASIC;
-		break;
-		case FILTER_BASIC:
-		g_Filter = FILTER_DOUBLE;
-		break;
-		case FILTER_DOUBLE:
-		g_Filter = FILTER_NONE;
-		break;
-	}
+		/*switch(g_Filter) {
+			case FILTER_NONE:
+				g_Filter = FILTER_BASIC;
+				break;
+			case FILTER_BASIC:
+				g_Filter = FILTER_DOUBLE;
+				break;
+			case FILTER_DOUBLE:
+				g_Filter = FILTER_NONE;
+				break;
+		}
+		*/
 
 	case ACTION_NEXT_LEVEL:
 		goToNextWorld();

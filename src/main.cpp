@@ -1136,7 +1136,7 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
     int bnNew;
     // Genesis block
     if (pindexLast == NULL) {
-        bnNew = nProofOfWorkLimit;
+        return nProofOfWorkLimit;
     } else {
       const int CurHeight = pindexLast->nHeight+1;
 
@@ -1146,6 +1146,7 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
 
       int64 nTargetSpacing;
       int64 nInterval;
+      int64 nAntiwarpInterval;
 
       if (CurHeight < 8000)
       {
@@ -1156,16 +1157,21 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
       {
           nTargetSpacing = 1*60; // 1 minute
           nInterval = 2000;
+          nAntiwarpInterval = 200;
       }
       if(fTestNet) {
         nTargetSpacing = 60;
         nInterval = 10;
+        nAntiwarpInterval = 3;
       }
 
       // Only change once per interval
-      if (CurHeight % nInterval != 0) {
-          bnNew =  pindexLast->nBits;
-      } else {
+      bnNew = pindexLast->nBits;
+      if (CurHeight % nInterval != 0 && CurHeight % nAntiwarpInterval != 0)
+          return bnNew;
+      const CBlockIndex* pindexFirst = pindexLast;
+      unsigned int Sum = 0;
+      if (CurHeight % nInterval == 0) {
         //calculate new game frequency relative to wall clock frequency
         int64 nTargetTimespan = nInterval*nTargetSpacing;
         
@@ -1178,8 +1184,7 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
         static uint16_t Times[2048];
 
         // Go back by what we want to be 3.5 days worth of blocks
-        const CBlockIndex* pindexFirst = pindexLast;
-        unsigned int Sum = 0;
+
         for (int i = 0; pindexFirst && i < blockstogoback; i++)
         {
             Times[i] = pindexFirst->Nonce.NumFrames;
@@ -1226,19 +1231,35 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
         printf("GetNextWorkRequired nTargetTimespan = %" PRI64d "    nActualTimespan = %" PRI64d "\n", nTargetTimespan, nActualTimespan);
         printf("GetNextWorkRequired Before: %i\n", pindexLast->nBits & MOTO_TARGET_MASK);
         printf("GetNextWorkRequired After:  %i\n", bnNew);
+        
+      }
+      if((CurHeight < 196000 && CurHeight % nInterval == 0) || (CurHeight >= 196000 && CurHeight % nAntiwarpInterval == 0)) {
         //calculate new block frequency relative to game frequency
         if(CurHeight > 177107 && CurHeight < 180000 || fTestNet) {
           bnNew = nProofOfWorkLimit;
         }
         if(CurHeight >= 177107 || fTestNet) {
-          printf("GetNextWorkRequired Game Sum: %i\n", Sum);
+          
           bnNew = bnNew & MOTO_TARGET_MASK;
           if(bnNew < nProofOfWorkLimit)
             bnNew += 1;
           unsigned int lastdiff = pindexLast->nBits >> 14;
 
+          if(CurHeight >= 196000) {
+            Sum = 0;
+            nInterval = nAntiwarpInterval;
+  
+            pindexFirst = pindexLast;
+            for (int i = 0; pindexFirst && i < nAntiwarpInterval; i++)
+            {
+              Sum += pindexFirst->Nonce.NumFrames;
+              pindexFirst = pindexFirst->pprev;
+            }
+            assert(pindexFirst);
+          }
+          printf("GetNextWorkRequired Game Sum: %i\n", Sum);
           // Limit adjustment step
-          nActualTimespan = (pindexLast->GetBlockTime() - pindexFirst->GetBlockTime())*250;
+          int64 nActualTimespan = (pindexLast->GetBlockTime() - pindexFirst->GetBlockTime())*250;
           
           //If new time is more constrained
           if((bnNew * nInterval) < Sum) {
@@ -1274,6 +1295,7 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
           bnNew |= ((bnNewWork.GetCompact()) & (~MOTO_TARGET_MASK)) | 1 << 14; //set low bit so compact never truncates to a 0 value
             //TODO: Make a compact representation with a smaller mantissa, instead
         }
+        printf("GetNextWorkRequired New nBits: %X\n", bnNew);
       }
     }
     return bnNew;
@@ -1311,11 +1333,11 @@ void static InvalidChainFound(CBlockIndex* pindexNew)
         pblocktree->WriteBestInvalidWork(CBigNum(nBestInvalidWork));
         uiInterface.NotifyBlocksChanged();
     }
-    printf("InvalidChainFound: invalid block=%s  height=%d  log2_work=%.8g  date=%s\n",
+    printf("InvalidChainFound: invalid block=%s  height=%d  log2_work=%.16g  date=%s\n",
       pindexNew->GetBlockHash().ToString().c_str(), pindexNew->nHeight,
       log(pindexNew->nChainWork.getdouble())/log(2.0), DateTimeStrFormat("%Y-%m-%d %H:%M:%S",
       pindexNew->GetBlockTime()).c_str());
-    printf("InvalidChainFound:  current best=%s  height=%d  log2_work=%.8g  date=%s\n",
+    printf("InvalidChainFound:  current best=%s  height=%d  log2_work=%.16g  date=%s\n",
       hashBestChain.ToString().c_str(), nBestHeight, log(nBestChainWork.getdouble())/log(2.0),
       DateTimeStrFormat("%Y-%m-%d %H:%M:%S", pindexBest->GetBlockTime()).c_str());
     if (pindexBest && nBestInvalidWork > nBestChainWork + (pindexBest->GetBlockWork() * 6).getuint256())
@@ -2003,7 +2025,7 @@ bool SetBestChain(CValidationState &state, CBlockIndex* pindexNew)
     nBestChainWork = pindexNew->nChainWork;
     nTimeBestReceived = GetTime();
     nTransactionsUpdated++;
-    printf("SetBestChain: new best=%s  height=%d  log2_work=%.8g  tx=%lu  date=%s progress=%f\n",
+    printf("SetBestChain: new best=%s  height=%d  log2_work=%.16g  tx=%lu  date=%s progress=%f\n",
       hashBestChain.ToString().c_str(), nBestHeight, log(nBestChainWork.getdouble())/log(2.0), (unsigned long)pindexNew->nChainTx,
       DateTimeStrFormat("%Y-%m-%d %H:%M:%S", pindexBest->GetBlockTime()).c_str(),
       Checkpoints::GuessVerificationProgress(pindexBest));
