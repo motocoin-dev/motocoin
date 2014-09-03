@@ -1233,7 +1233,7 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
         printf("GetNextWorkRequired After:  %i\n", bnNew);
         
       }
-      if((CurHeight < 196000 && CurHeight % nInterval == 0) || (CurHeight >= 196000 && CurHeight % nAntiwarpInterval == 0)) {
+      if((CurHeight < 198000 && CurHeight % nInterval == 0) || (CurHeight >= 198000 && CurHeight % nAntiwarpInterval == 0)) {
         //calculate new block frequency relative to game frequency
         if(CurHeight > 177107 && CurHeight < 180000 || fTestNet) {
           bnNew = nProofOfWorkLimit;
@@ -1245,7 +1245,7 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
             bnNew += 1;
           unsigned int lastdiff = pindexLast->nBits >> 14;
 
-          if(CurHeight >= 196000) {
+          if(CurHeight >= 198000) {
             Sum = 0;
             nInterval = nAntiwarpInterval;
   
