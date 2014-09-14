@@ -32,7 +32,7 @@
 &lt;body&gt;
 &lt;h1 align=&quot;center&quot;&gt;Mining&lt;/h1&gt;
 &lt;p&gt;To mine &lt;b&gt;motocoins&lt;/b&gt; you will have to play a 2D motorbike simulation game called Motogame, which is inspired by Elasto Mania. You control your bike by using the arrow keys and space. Your goal is to hit the coin at the bottom of any map with a wheel or the helmet and to do it in time less than the current target time. Some levels are impossible to complete, so just keep pressing F6 until you find a level that can be completed.&lt;/p&gt;
-&lt;p&gt;When you hit the coin you will get rewarded with (currently) 100 motocoins. There is some chance that you will not get your reward - this may happen if someone else completes the map at the same moment as you. If you see the map suddenly change while playing, it means someone else has mined the previous block. &lt;/p&gt;
+&lt;p&gt;When you hit the coin you will get rewarded with (currently) 20 motocoins. There is some chance that you will not get your reward - this may happen if someone else completes the map at the same moment as you. If you see the map suddenly change while playing, it means someone else has mined the previous block. &lt;/p&gt;
 &lt;h2 align=&quot;center&quot;&gt;Game controls:&lt;/h2&gt;
 &lt;table&gt;
     &lt;tr&gt;
