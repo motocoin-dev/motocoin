@@ -1,8 +1,6 @@
 Motocoin integration/staging tree
 ================================
 
-http://www.motocoin.org
-
 https://motocoin-dev.github.io/motocoin-site/
 
 Copyright (c) 2009-2014 Bitcoin Developers
